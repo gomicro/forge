@@ -55,6 +55,8 @@ func rootFunc(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 
-		fmt.Printf("%v", out)
+		if out != "" {
+			fmt.Printf("%v", out)
+		}
 	}
 }
