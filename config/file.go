@@ -1,11 +1,8 @@
 package config
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
-	"os/exec"
-	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -32,68 +29,4 @@ func ParseFromFile() (*File, error) {
 	}
 
 	return &conf, nil
-}
-
-// Project represents metadata about the project being built that can be
-// included in the config file.
-type Project struct {
-	Name string `yaml:"name"`
-}
-
-// Step represents details of single step to be executed by the cli.
-type Step struct {
-	Cmd Cmd `yaml:"cmd"`
-	//Cmds []string `yaml:"cmds"`
-}
-
-// Execute runs the command that is specified for the step. It returns the output
-// of the command and any errors it encounters.
-func (s *Step) Execute() (string, error) {
-	return s.Cmd.Execute()
-}
-
-// Cmd represents a custom unmarshallable entity that is broken down into an
-// executable command line entry.
-type Cmd struct {
-	Command string
-	Args    []string
-}
-
-// Execute runs the command defined. It returns the output of the command and
-// any errors it encounters.
-func (c *Cmd) Execute() (string, error) {
-	cmd := exec.Command(c.Command, c.Args...)
-
-	var out bytes.Buffer
-	cmd.Stdout = &out
-
-	err := cmd.Run()
-	if err != nil {
-		return "", fmt.Errorf("cmd exec: %v", err.Error())
-	}
-
-	return out.String(), nil
-}
-
-// UnmarshalYAML meets the unmarshaller interface for the yaml library being
-// used. It parses and splits the command string into an executable shell
-// command.
-func (c *Cmd) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var cmdStr string
-
-	err := unmarshal(&cmdStr)
-	if err != nil {
-		return err
-	}
-
-	parts := strings.Split(cmdStr, " ")
-	if len(parts) > 0 {
-		c.Command = parts[0]
-
-		if len(parts) > 1 {
-			c.Args = parts[1:]
-		}
-	}
-
-	return nil
 }
