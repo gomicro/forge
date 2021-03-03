@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/gomicro/forge/config"
 	"github.com/gomicro/forge/fmt"
 )
 
@@ -25,9 +26,11 @@ func initEnvs() {
 
 // RootCmd represents the base command without any params on it.
 var RootCmd = &cobra.Command{
-	Use:   "forge",
+	Use:   "forge step [step]...",
 	Short: "A CLI for building projects",
 	Long:  `Forge is a CLI tool for executing, in a consistent manner, scripts and commands for building and maintaining projects.`,
+	Args:  cobra.MinimumNArgs(1),
+	Run:   rootFunc,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -36,5 +39,22 @@ func Execute() {
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Printf("Failed to execute: %v", err.Error())
 		os.Exit(1)
+	}
+}
+
+func rootFunc(cmd *cobra.Command, args []string) {
+	conf, err := config.ParseFromFile()
+	if err != nil {
+		fmt.Printf("Failed: %v", err.Error())
+	}
+
+	for _, target := range args {
+		out, err := conf.Steps[target].Execute()
+		if err != nil {
+			fmt.Printf("failed executing %v: %v", target, err.Error())
+			os.Exit(1)
+		}
+
+		fmt.Printf("%v", out)
 	}
 }
