@@ -16,8 +16,7 @@ type File struct {
 	Steps   map[string]*Step `yaml:"steps"`
 }
 
-// ParseFromFile reads an Duty config file from the file specified in the
-// environment or from the default file location if no environment is specified.
+// ParseFromFile reads an Forge config file from the from the curent directory.
 // A File with the populated values is returned and any errors encountered while
 // trying to read the file.
 func ParseFromFile() (*File, error) {
@@ -35,24 +34,33 @@ func ParseFromFile() (*File, error) {
 	return &conf, nil
 }
 
+// Project represents metadata about the project being built that can be
+// included in the config file.
 type Project struct {
 	Name string `yaml:"name"`
 }
 
+// Step represents details of single step to be executed by the cli.
 type Step struct {
 	Cmd Cmd `yaml:"cmd"`
 	//Cmds []string `yaml:"cmds"`
 }
 
+// Execute runs the command that is specified for the step. It returns the output
+// of the command and any errors it encounters.
 func (s *Step) Execute() (string, error) {
 	return s.Cmd.Execute()
 }
 
+// Cmd represents a custom unmarshallable entity that is broken down into an
+// executable command line entry.
 type Cmd struct {
 	Command string
 	Args    []string
 }
 
+// Execute runs the command defined. It returns the output of the command and
+// any errors it encounters.
 func (c *Cmd) Execute() (string, error) {
 	cmd := exec.Command(c.Command, c.Args...)
 
@@ -67,6 +75,9 @@ func (c *Cmd) Execute() (string, error) {
 	return string(out.Bytes()), nil
 }
 
+// UnmarshalYAML meets the unmarshaller interface for the yaml library being
+// used. It parses and splits the command string into an executable shell
+// command.
 func (c *Cmd) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var cmdStr string
 
