@@ -1,0 +1,9 @@
+project:
+  name: forge
+
+steps:
+  build:
+    cmd: go build
+
+  install:
+    cmd: go install
