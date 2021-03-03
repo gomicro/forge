@@ -7,3 +7,6 @@ steps:
 
   install:
     cmd: go install
+
+  test:
+    cmd: go test ./...
