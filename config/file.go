@@ -72,7 +72,7 @@ func (c *Cmd) Execute() (string, error) {
 		return "", fmt.Errorf("cmd exec: %v", err.Error())
 	}
 
-	return string(out.Bytes()), nil
+	return out.String(), nil
 }
 
 // UnmarshalYAML meets the unmarshaller interface for the yaml library being
