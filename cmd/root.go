@@ -49,7 +49,13 @@ func rootFunc(cmd *cobra.Command, args []string) {
 	}
 
 	for _, target := range args {
-		out, err := conf.Steps[target].Execute()
+		step, found := conf.Steps[target]
+		if !found {
+			fmt.Printf("step '%v' not found", target)
+			os.Exit(1)
+		}
+
+		out, err := step.Execute()
 		if err != nil {
 			fmt.Printf("failed executing %v: %v", target, err.Error())
 			os.Exit(1)
