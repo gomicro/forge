@@ -7,6 +7,7 @@ steps:
     cmd: go build
 
   install:
+    help: Installs the binary into GOBIN
     cmd: go install
 
   test:
