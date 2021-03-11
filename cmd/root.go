@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/gomicro/forge/cmd/config"
 	"github.com/gomicro/forge/confile"
 	"github.com/gomicro/forge/fmt"
 )
@@ -19,6 +20,8 @@ func init() {
 		fmt.Printf("Error setting up: %v\n", err.Error())
 		os.Exit(1)
 	}
+
+	RootCmd.AddCommand(config.ConfigCmd)
 }
 
 func initEnvs() {
