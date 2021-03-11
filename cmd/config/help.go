@@ -29,16 +29,18 @@ func confHelpFunc(cmd *cobra.Command, args []string) {
 	pad := calcPadding(conf.Steps)
 	for target := range conf.Steps {
 		help := conf.Steps[target].Help
-		if help != "" {
-			fmt.Printf("%-"+pad+"v---- %v", target, help)
+		if help == "" {
+			help = conf.Steps[target].Cmd
 		}
+
+		fmt.Printf("%-"+pad+"v---- %v", target, help)
 	}
 }
 
 func calcPadding(steps map[string]*confile.Step) string {
 	l := 0
 	for t := range steps {
-		if len(t) > l && len(steps[t].Help) > 0 {
+		if len(t) > l {
 			l = len(t)
 		}
 	}
