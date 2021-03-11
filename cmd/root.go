@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/gomicro/forge/config"
+	"github.com/gomicro/forge/confile"
 	"github.com/gomicro/forge/fmt"
 )
 
@@ -43,7 +43,7 @@ func Execute() {
 }
 
 func rootFunc(cmd *cobra.Command, args []string) {
-	conf, err := config.ParseFromFile()
+	conf, err := confile.ParseFromFile()
 	if err != nil {
 		fmt.Printf("Failed: %v", err.Error())
 	}

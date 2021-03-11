@@ -1,4 +1,4 @@
-package config
+package confile
 
 // Project represents metadata about the project being built that can be
 // included in the config file.
