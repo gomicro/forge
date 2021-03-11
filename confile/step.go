@@ -10,6 +10,7 @@ import (
 type Step struct {
 	Cmd string `yaml:"cmd"`
 	//Cmds []string `yaml:"cmds"`
+	Help string `yaml:"help"`
 }
 
 // Execute runs the command that is specified for the step. It returns the output

@@ -3,10 +3,12 @@ project:
 
 steps:
   build:
+    help: Compiles the project into a binary for the current system's OS
     cmd: go build
 
   install:
     cmd: go install
 
   test:
+    help: Run the unit tests for the project
     cmd: go test ./...
