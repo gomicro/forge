@@ -1,6 +1,7 @@
 package config
 
 import (
+	"sort"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -27,13 +28,21 @@ func confHelpFunc(cmd *cobra.Command, args []string) {
 	}
 
 	pad := calcPadding(conf.Steps)
-	for target := range conf.Steps {
-		help := conf.Steps[target].Help
+
+	targets := make([]string, 0, len(conf.Steps))
+	for t := range conf.Steps {
+		targets = append(targets, t)
+	}
+
+	sort.Strings(targets)
+
+	for _, t := range targets {
+		help := conf.Steps[t].Help
 		if help == "" {
-			help = conf.Steps[target].Cmd
+			help = conf.Steps[t].Cmd
 		}
 
-		fmt.Printf("%-"+pad+"v---- %v", target, help)
+		fmt.Printf("%-"+pad+"v---- %v", t, help)
 	}
 }
 
