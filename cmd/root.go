@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"os"
+	"sort"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/gomicro/forge/cmd/config"
 	"github.com/gomicro/forge/confile"
 	"github.com/gomicro/forge/fmt"
 )
@@ -20,8 +20,6 @@ func init() {
 		fmt.Printf("Error setting up: %v\n", err.Error())
 		os.Exit(1)
 	}
-
-	RootCmd.AddCommand(config.ConfigCmd)
 }
 
 func initEnvs() {
@@ -29,11 +27,12 @@ func initEnvs() {
 
 // RootCmd represents the base command without any params on it.
 var RootCmd = &cobra.Command{
-	Use:   "forge step [step]...",
-	Short: "A CLI for building projects",
-	Long:  `Forge is a CLI tool for executing, in a consistent manner, scripts and commands for building and maintaining projects.`,
-	Args:  cobra.MinimumNArgs(1),
-	Run:   rootFunc,
+	Use:               "forge step [step]...",
+	Short:             "A CLI for building projects",
+	Long:              `Forge is a CLI tool for executing, in a consistent manner, scripts and commands for building and maintaining projects.`,
+	Args:              cobra.MinimumNArgs(1),
+	Run:               rootFunc,
+	ValidArgsFunction: validArgsFunc,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -68,4 +67,34 @@ func rootFunc(cmd *cobra.Command, args []string) {
 			fmt.Printf("%v", out)
 		}
 	}
+}
+
+func validArgsFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return argStrings(), cobra.ShellCompDirectiveNoFileComp
+}
+
+func argStrings() []string {
+	conf, err := confile.ParseFromFile()
+	if err != nil {
+		return nil
+	}
+
+	targets := make([]string, 0, len(conf.Steps))
+	for t := range conf.Steps {
+		targets = append(targets, t)
+	}
+
+	sort.Strings(targets)
+
+	args := make([]string, 0, len(targets))
+	for _, t := range targets {
+		help := conf.Steps[t].Help
+		if help == "" {
+			help = conf.Steps[t].Cmd
+		}
+
+		args = append(args, t+"\t"+help)
+	}
+
+	return args
 }
