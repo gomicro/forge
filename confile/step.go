@@ -8,9 +8,9 @@ import (
 
 // Step represents details of single step to be executed by the cli.
 type Step struct {
-	Cmd string `yaml:"cmd"`
+	Help string `yaml:"help,omitempty"`
+	Cmd  string `yaml:"cmd"`
 	//Cmds []string `yaml:"cmds"`
-	Help string `yaml:"help"`
 }
 
 // Execute runs the command that is specified for the step. It returns the output
