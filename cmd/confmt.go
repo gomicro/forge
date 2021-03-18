@@ -8,17 +8,17 @@ import (
 )
 
 func init() {
-	RootCmd.AddCommand(fmtCmd)
+	RootCmd.AddCommand(confmtCmd)
 }
 
-var fmtCmd = &cobra.Command{
-	Use:   "fmt",
+var confmtCmd = &cobra.Command{
+	Use:   "confmt",
 	Short: "Format the forge config file",
 	Long:  `Format and adjust the forge file for consistency.`,
-	Run:   fmtFunc,
+	Run:   confmtFunc,
 }
 
-func fmtFunc(cmd *cobra.Command, args []string) {
+func confmtFunc(cmd *cobra.Command, args []string) {
 	conf, err := confile.ParseFromFile()
 	if err != nil {
 		fmt.Printf("Failed: %v", err.Error())
