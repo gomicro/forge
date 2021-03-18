@@ -1,4 +1,4 @@
-package config
+package cmd
 
 import (
 	"github.com/spf13/cobra"
@@ -8,12 +8,12 @@ import (
 )
 
 func init() {
-	ConfigCmd.AddCommand(fmtCmd)
+	RootCmd.AddCommand(fmtCmd)
 }
 
 var fmtCmd = &cobra.Command{
 	Use:   "fmt",
-	Short: "Format the forge file",
+	Short: "Format the forge config file",
 	Long:  `Format and adjust the forge file for consistency.`,
 	Run:   fmtFunc,
 }
