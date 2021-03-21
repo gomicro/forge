@@ -48,6 +48,7 @@ func rootFunc(cmd *cobra.Command, args []string) {
 	conf, err := confile.ParseFromFile()
 	if err != nil {
 		fmt.Printf("Failed: %v", err.Error())
+		os.Exit(1)
 	}
 
 	for _, a := range args {
