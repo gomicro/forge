@@ -14,7 +14,7 @@ type Step struct {
 	Help  string   `yaml:"help,omitempty"`
 	Cmd   string   `yaml:"cmd,omitempty"`
 	Cmds  []string `yaml:"cmds,omitempty"`
-	Steps []string `yaml:"steps"`
+	Steps []string `yaml:"steps,omitempty"`
 }
 
 // Execute runs the command that is specified for the step. It returns the output
