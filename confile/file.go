@@ -3,6 +3,7 @@ package confile
 import (
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -30,6 +31,21 @@ func ParseFromFile() (*File, error) {
 	err = yaml.Unmarshal(b, &conf)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to unmarshal config file: %v", err.Error())
+	}
+
+	for name, step := range conf.Steps {
+		if len(step.Steps) > 0 {
+			infloop := false
+			for _, s := range step.Steps {
+				if strings.ToLower(s) == strings.ToLower(name) {
+					infloop = true
+				}
+			}
+
+			if infloop {
+				return nil, fmt.Errorf("infinite loop detected: step '%v'", name)
+			}
+		}
 	}
 
 	return &conf, nil
