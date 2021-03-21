@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 	"os/exec"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // Step represents details of single step to be executed by the cli.
@@ -42,17 +44,29 @@ func (s *Step) executeCmds() error {
 func executeCmd(cmdString string) error {
 	cmd := exec.Command("bash", "-c", cmdString)
 
+	g := errgroup.Group{}
+
 	out, _ := cmd.StdoutPipe()
-	go func() {
+	g.Go(func() error {
 		defer out.Close()
-		io.Copy(os.Stdout, out)
-	}()
+		_, err := io.Copy(os.Stdout, out)
+		if err != nil {
+			return fmt.Errorf("stdout copy: %v", err.Error())
+		}
+
+		return nil
+	})
 
 	errout, _ := cmd.StderrPipe()
-	go func() {
+	g.Go(func() error {
 		defer errout.Close()
-		io.Copy(os.Stderr, errout)
-	}()
+		_, err := io.Copy(os.Stderr, errout)
+		if err != nil {
+			return fmt.Errorf("stderr copy: %v", err.Error())
+		}
+
+		return nil
+	})
 
 	err := cmd.Start()
 	if err != nil {
@@ -64,5 +78,5 @@ func executeCmd(cmdString string) error {
 		return fmt.Errorf("execute: %v", err.Error())
 	}
 
-	return nil
+	return g.Wait()
 }
