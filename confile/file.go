@@ -37,7 +37,7 @@ func ParseFromFile() (*File, error) {
 		if len(step.Steps) > 0 {
 			infloop := false
 			for _, s := range step.Steps {
-				if strings.ToLower(s) == strings.ToLower(name) {
+				if strings.EqualFold(s, name) {
 					infloop = true
 				}
 			}
