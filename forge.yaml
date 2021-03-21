@@ -6,6 +6,8 @@ steps:
     cmd: go build
   install:
     help: Installs the binary into GOBIN
+    pre:
+      - build
     cmd: go install
   test:
     help: Run the unit tests for the project
