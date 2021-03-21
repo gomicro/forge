@@ -1,7 +1,7 @@
 package confile
 
 import (
-	"strings"
+	"fmt"
 )
 
 // Alias represents an alias of one or many steps to be executed by the cli.
@@ -12,19 +12,13 @@ type Alias struct {
 
 // Execute runs the steps that are specified for the alias. It returns the
 // output of the steps executed and the first, if any, errors it encounters.
-func (a *Alias) Execute(steps map[string]*Step) (string, error) {
-	var outs []string
-	var err error
-
+func (a *Alias) Execute(steps map[string]*Step) error {
 	for _, s := range a.Steps {
-		var out string
-		out, err = steps[s].Execute()
+		err := steps[s].Execute()
 		if err != nil {
-			break
+			return fmt.Errorf("alias: execute: step: %v: %v", s, err.Error())
 		}
-
-		outs = append(outs, out)
 	}
 
-	return strings.Join(outs, "\n"), nil
+	return nil
 }

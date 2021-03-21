@@ -58,26 +58,18 @@ func rootFunc(cmd *cobra.Command, args []string) {
 	}
 
 	for _, a := range aliases {
-		out, err := conf.Aliases[a].Execute(conf.Steps)
+		err := conf.Aliases[a].Execute(conf.Steps)
 		if err != nil {
 			ffmt.Printf("failed executing alias %v: %v", a, err.Error())
 			os.Exit(1)
 		}
-
-		if out != "" {
-			ffmt.Printf("%v", out)
-		}
 	}
 
 	for _, s := range steps {
-		out, err := conf.Steps[s].Execute()
+		err := conf.Steps[s].Execute()
 		if err != nil {
 			ffmt.Printf("failed executing step %v: %v", s, err.Error())
 			os.Exit(1)
-		}
-
-		if out != "" {
-			ffmt.Printf("%v", out)
 		}
 	}
 }
