@@ -11,14 +11,19 @@ import (
 
 // Step represents details of single step to be executed by the cli.
 type Step struct {
-	Help string   `yaml:"help,omitempty"`
-	Cmd  string   `yaml:"cmd,omitempty"`
-	Cmds []string `yaml:"cmds,omitempty"`
+	Help  string   `yaml:"help,omitempty"`
+	Cmd   string   `yaml:"cmd,omitempty"`
+	Cmds  []string `yaml:"cmds,omitempty"`
+	Steps []string `yaml:"steps"`
 }
 
 // Execute runs the command that is specified for the step. It returns the output
 // of the command and any errors it encounters.
-func (s *Step) Execute() error {
+func (s *Step) Execute(allSteps map[string]*Step) error {
+	if len(s.Steps) > 0 {
+		return s.executeSteps(allSteps)
+	}
+
 	if len(s.Cmds) > 0 {
 		return s.executeCmds()
 	}
@@ -35,6 +40,17 @@ func (s *Step) executeCmds() error {
 		err := executeCmd(c)
 		if err != nil {
 			return fmt.Errorf("cmds: cmd exec: %v", err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (s *Step) executeSteps(allSteps map[string]*Step) error {
+	for _, step := range s.Steps {
+		err := allSteps[step].Execute(allSteps)
+		if err != nil {
+			return fmt.Errorf("alias: step exec: %v", err.Error())
 		}
 	}
 
