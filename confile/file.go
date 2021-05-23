@@ -74,9 +74,5 @@ func (f *File) Fmt() error {
 // returns true if the file exists, and false if the file doesn't exist.
 func Exists() bool {
 	_, err := os.Stat(file)
-	if errors.Is(err, fs.ErrNotExist) {
-		return false
-	}
-
-	return true
+	return !errors.Is(err, fs.ErrNotExist)
 }
