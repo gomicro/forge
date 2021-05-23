@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 
 	"github.com/gomicro/forge/confile"
@@ -19,6 +21,11 @@ var initCmd = &cobra.Command{
 }
 
 func initFunc(cmd *cobra.Command, args []string) {
+	if confile.Exists() {
+		fmt.Printf("config file already exists")
+		os.Exit(1)
+	}
+
 	f := &confile.File{
 		Project: &confile.Project{
 			Name: "sample-forge-project",

@@ -1,8 +1,11 @@
 package confile
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -65,4 +68,15 @@ func (f *File) Fmt() error {
 	}
 
 	return nil
+}
+
+// Exists checks whether or not the preferred config file exists or not. It
+// returns true if the file exists, and false if the file doesn't exist.
+func Exists() bool {
+	_, err := os.Stat(file)
+	if errors.Is(err, fs.ErrNotExist) {
+		return false
+	}
+
+	return true
 }
