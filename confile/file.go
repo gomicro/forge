@@ -59,7 +59,7 @@ func (f *File) Fmt() error {
 		return fmt.Errorf("fmt: marshal: %v", err.Error())
 	}
 
-	err = ioutil.WriteFile(file, b, 644)
+	err = ioutil.WriteFile(file, b, 0644)
 	if err != nil {
 		return fmt.Errorf("fmt: write file: %v", err.Error())
 	}
