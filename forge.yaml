@@ -4,6 +4,9 @@ steps:
   build:
     help: Compiles the project into a binary for the current system's OS
     cmd: go build
+  linters:
+    help: Run all the linters
+    cmd: golangci-lint run
   install:
     help: Installs the binary into GOBIN
     pre:
