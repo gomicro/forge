@@ -2,11 +2,8 @@ package confile
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
-
-	"golang.org/x/sync/errgroup"
 )
 
 // Step represents details of single step to be executed by the cli.
@@ -85,39 +82,12 @@ func (s *Step) executeSteps(execList []string, allSteps map[string]*Step) error 
 func executeCmd(cmdString string) error {
 	cmd := exec.Command("bash", "-c", cmdString)
 
-	g := errgroup.Group{}
-
-	out, _ := cmd.StdoutPipe()
-	g.Go(func() error {
-		defer out.Close()
-		_, err := io.Copy(os.Stdout, out)
-		if err != nil {
-			return fmt.Errorf("stdout copy: %v", err.Error())
-		}
-
-		return nil
-	})
-
-	errout, _ := cmd.StderrPipe()
-	g.Go(func() error {
-		defer errout.Close()
-		_, err := io.Copy(os.Stderr, errout)
-		if err != nil {
-			return fmt.Errorf("stderr copy: %v", err.Error())
-		}
-
-		return nil
-	})
-
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	err := cmd.Start()
 	if err != nil {
 		return fmt.Errorf("execute: %v", err.Error())
 	}
 
-	err = cmd.Wait()
-	if err != nil {
-		return fmt.Errorf("execute: %v", err.Error())
-	}
-
-	return g.Wait()
+	return cmd.Wait()
 }
