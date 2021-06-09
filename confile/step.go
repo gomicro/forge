@@ -70,7 +70,12 @@ func (s *Step) executeCmds() error {
 
 func (s *Step) executeSteps(execList []string, allSteps map[string]*Step) error {
 	for _, step := range execList {
-		err := allSteps[step].Execute(allSteps)
+		s, ok := allSteps[step]
+		if !ok {
+			return fmt.Errorf("step does not exist: %v", step)
+		}
+
+		err := s.Execute(allSteps)
 		if err != nil {
 			return err
 		}
