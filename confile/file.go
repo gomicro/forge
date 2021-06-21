@@ -17,8 +17,9 @@ const (
 
 // File represents the build options for a project
 type File struct {
-	Project *Project         `yaml:"project"`
-	Steps   map[string]*Step `yaml:"steps"`
+	Project *Project          `yaml:"project"`
+	Envs    map[string]string `yaml:"envs,omitempty"`
+	Steps   map[string]*Step  `yaml:"steps"`
 }
 
 // ParseFromFile reads an Forge config file from the from the curent directory.

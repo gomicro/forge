@@ -3,12 +3,20 @@ project:
 steps:
   build:
     help: Compiles the project into a binary for the current system's OS
-    cmd: go build
+    envs:
+      CGO_ENABLED: 0
+    cmd: GOOS=$(uname -s | tr '[:upper:]' '[:lower:]') go build -o forge .
+  coverage:
+    help: Generates the code coverage from all the tests
+    cmd: docker run gomicro/gocover
   install:
     help: Installs the binary into GOBIN
     pre:
-      - build
+    - build
     cmd: go install
+  linters:
+    help: Run all the linters
+    cmd: golangci-lint run
   test:
     help: Run the unit tests for the project
     cmd: go test ./...
