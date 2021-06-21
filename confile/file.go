@@ -6,8 +6,11 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 
+	"github.com/gomicro/forge/vars"
 	"gopkg.in/yaml.v2"
 )
 
@@ -20,6 +23,7 @@ type File struct {
 	Project *Project          `yaml:"project"`
 	Envs    map[string]string `yaml:"envs,omitempty"`
 	Steps   map[string]*Step  `yaml:"steps"`
+	Vars    *vars.Vars        `yaml:"="`
 }
 
 // ParseFromFile reads an Forge config file from the from the curent directory.
@@ -51,6 +55,26 @@ func ParseFromFile() (*File, error) {
 			}
 		}
 	}
+
+	vars := &vars.Vars{}
+
+	shaBytes, err := exec.Command("git", "rev-parse", "HEAD").Output()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get sha: %v", err.Error())
+	}
+
+	branchBytes, err := exec.Command("git", "branch", "--show-current").Output()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get branch: %v", err.Error())
+	}
+
+	vars.Set("Project", conf.Project.Name)
+	vars.Set("Os", runtime.GOOS)
+	vars.Set("Sha", string(shaBytes))
+	vars.Set("ShortSha", string(shaBytes)[:7])
+	vars.Set("Branch", string(branchBytes))
+
+	conf.Vars = vars
 
 	return &conf, nil
 }

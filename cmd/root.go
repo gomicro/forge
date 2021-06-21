@@ -60,7 +60,7 @@ func rootFunc(cmd *cobra.Command, args []string) {
 	}
 
 	for _, s := range args {
-		err := conf.Steps[s].Execute(conf.Steps, conf.Envs)
+		err := conf.Steps[s].Execute(conf.Steps, conf.Envs, conf.Vars)
 		if err != nil {
 			fmt.Printf("failed executing step %v: %v", s, err.Error())
 			os.Exit(1)
