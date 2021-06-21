@@ -4,8 +4,8 @@ steps:
   build:
     help: Compiles the project into a binary for the current system's OS
     envs:
-      Goos: linux #uname -s | tr '[:upper:]' '[:lower:]'
-    cmd: CGO_ENABLED=0 GOOS={{.Goos}} go build -o {{.Project}} .
+      CGO_ENABLED: 0
+    cmd: GOOS=$(uname -s | tr '[:upper:]' '[:lower:]') go build -o forge .
   coverage:
     help: Generates the code coverage from all the tests
     cmd: docker run gomicro/gocover
