@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+
+	"github.com/gomicro/forge/vars"
 )
 
 // Step represents details of single step to be executed by the cli.
@@ -17,12 +19,14 @@ type Step struct {
 	Steps []string          `yaml:"steps,omitempty"`
 
 	projectEnvs map[string]string
+	vars        *vars.Vars
 }
 
 // Execute runs the command that is specified for the step. It returns the output
 // of the command and any errors it encounters.
-func (s *Step) Execute(allSteps map[string]*Step, projectEnvs map[string]string) error {
+func (s *Step) Execute(allSteps map[string]*Step, projectEnvs map[string]string, vars *vars.Vars) error {
 	s.projectEnvs = projectEnvs
+	s.vars = vars
 
 	if len(s.Pre) > 0 {
 		err := s.executeSteps(s.Pre, allSteps)
@@ -59,12 +63,15 @@ func (s *Step) Execute(allSteps map[string]*Step, projectEnvs map[string]string)
 }
 
 func (s *Step) executeCmd() error {
-	return executeCmd(s.Cmd, s.Envs, s.projectEnvs)
+	cmdString := s.vars.Process(s.Cmd)
+	return executeCmd(cmdString, s.Envs, s.projectEnvs, s.vars)
 }
 
 func (s *Step) executeCmds() error {
 	for _, c := range s.Cmds {
-		err := executeCmd(c, s.Envs, s.projectEnvs)
+		cmdString := s.vars.Process(c)
+
+		err := executeCmd(cmdString, s.Envs, s.projectEnvs, s.vars)
 		if err != nil {
 			return fmt.Errorf("cmds: cmd exec: %v", err.Error())
 		}
@@ -80,7 +87,7 @@ func (s *Step) executeSteps(execList []string, allSteps map[string]*Step) error 
 			return fmt.Errorf("step does not exist: %v", step)
 		}
 
-		err := s.Execute(allSteps, s.projectEnvs)
+		err := s.Execute(allSteps, s.projectEnvs, s.vars)
 		if err != nil {
 			return err
 		}
@@ -89,11 +96,16 @@ func (s *Step) executeSteps(execList []string, allSteps map[string]*Step) error 
 	return nil
 }
 
-func executeCmd(cmdString string, stepEnvs, projectEnvs map[string]string) error {
+func executeCmd(cmdString string, stepEnvs, projectEnvs map[string]string, vars *vars.Vars) error {
 	cmd := exec.Command("bash", "-c", cmdString)
 
 	cmd.Env = toSlice(stepEnvs)
 	cmd.Env = append(cmd.Env, toSlice(projectEnvs)...)
+
+	for i := range cmd.Env {
+		cmd.Env[i] = vars.Process(cmd.Env[i])
+	}
+
 	cmd.Env = append(cmd.Env, os.Environ()...)
 
 	cmd.Stdout = os.Stdout
