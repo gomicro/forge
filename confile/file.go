@@ -23,7 +23,7 @@ type File struct {
 	Project *Project          `yaml:"project"`
 	Envs    map[string]string `yaml:"envs,omitempty"`
 	Steps   map[string]*Step  `yaml:"steps"`
-	Vars    *vars.Vars        `yaml:"="`
+	Vars    *vars.Vars        `yaml:"-"`
 }
 
 // ParseFromFile reads an Forge config file from the from the curent directory.
