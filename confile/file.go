@@ -68,11 +68,17 @@ func ParseFromFile() (*File, error) {
 		return nil, fmt.Errorf("Failed to get branch: %v", err.Error())
 	}
 
-	vars.Set("Project", conf.Project.Name)
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get current working dir: %v", err.Error())
+	}
+
+	vars.Set("Branch", string(branchBytes))
+	vars.Set("Dir", currentDir)
 	vars.Set("Os", runtime.GOOS)
+	vars.Set("Project", conf.Project.Name)
 	vars.Set("Sha", string(shaBytes))
 	vars.Set("ShortSha", string(shaBytes)[:7])
-	vars.Set("Branch", string(branchBytes))
 
 	conf.Vars = vars
 
