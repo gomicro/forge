@@ -20,6 +20,27 @@ func init() {
 		fmt.Printf("Error setting up: %v\n", err.Error())
 		os.Exit(1)
 	}
+
+	RootCmd.PersistentFlags().Bool("solo", false, "run a step solo, without its pre or post steps")
+	err = viper.BindPFlag("solo", RootCmd.PersistentFlags().Lookup("solo"))
+	if err != nil {
+		fmt.Printf("Error setting up: %v\n", err.Error())
+		os.Exit(1)
+	}
+
+	RootCmd.PersistentFlags().Bool("no-pre", false, "skip running pre steps")
+	err = viper.BindPFlag("no-pre", RootCmd.PersistentFlags().Lookup("no-pre"))
+	if err != nil {
+		fmt.Printf("Error setting up: %v\n", err.Error())
+		os.Exit(1)
+	}
+
+	RootCmd.PersistentFlags().Bool("no-post", false, "skip running post steps")
+	err = viper.BindPFlag("no-post", RootCmd.PersistentFlags().Lookup("no-post"))
+	if err != nil {
+		fmt.Printf("Error setting up: %v\n", err.Error())
+		os.Exit(1)
+	}
 }
 
 func initEnvs() {

@@ -6,6 +6,7 @@ import (
 	"os/exec"
 
 	"github.com/gomicro/forge/vars"
+	"github.com/spf13/viper"
 )
 
 // Step represents details of single step to be executed by the cli.
@@ -25,10 +26,13 @@ type Step struct {
 // Execute runs the command that is specified for the step. It returns the output
 // of the command and any errors it encounters.
 func (s *Step) Execute(allSteps map[string]*Step, projectEnvs map[string]string, vars *vars.Vars) error {
+	skipPre := viper.GetBool("solo") || viper.GetBool("no-pre")
+	skipPost := viper.GetBool("solo") || viper.GetBool("no-post")
+
 	s.projectEnvs = projectEnvs
 	s.vars = vars
 
-	if len(s.Pre) > 0 {
+	if len(s.Pre) > 0 && !skipPre {
 		err := s.executeSteps(s.Pre, allSteps)
 		if err != nil {
 			return fmt.Errorf("step: execute pre: %v", err.Error())
@@ -52,7 +56,7 @@ func (s *Step) Execute(allSteps map[string]*Step, projectEnvs map[string]string,
 		}
 	}
 
-	if len(s.Post) > 0 {
+	if len(s.Post) > 0 && !skipPost {
 		err := s.executeSteps(s.Post, allSteps)
 		if err != nil {
 			return fmt.Errorf("step: execute post: %v", err.Error())
