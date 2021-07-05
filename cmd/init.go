@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"path"
 
 	"github.com/spf13/cobra"
 
@@ -26,9 +27,17 @@ func initFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	currentDir, err := os.Getwd()
+	if err != nil {
+		fmt.Printf("Failed to get current working dir: %v", err.Error())
+		os.Exit(1)
+	}
+
+	projName := path.Base(currentDir)
+
 	f := &confile.File{
 		Project: &confile.Project{
-			Name: "sample-forge-project",
+			Name: projName,
 		},
 		Steps: map[string]*confile.Step{
 			"build": {
@@ -38,7 +47,7 @@ func initFunc(cmd *cobra.Command, args []string) {
 		},
 	}
 
-	err := f.Fmt()
+	err = f.Fmt()
 	if err != nil {
 		fmt.Printf("Error Initializing File: %v", err.Error())
 	}
