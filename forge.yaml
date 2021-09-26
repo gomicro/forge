@@ -1,8 +1,5 @@
 project:
   name: forge
-envs:
-  DOCKER_PASSWORD: $DOCKER_PASSWORD
-  DOCKER_USERNAME: $DOCKER_USERNAME
 steps:
   build:
     help: Compiles the project into a binary for the current system's OS
@@ -16,10 +13,7 @@ steps:
     cmd: docker run gomicro/gocover
   deploy:
     help: deploy the artifacts
-    cmds:
-      - echo "Logging into Docker Hub"
-      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      - "VERSION={{.ShortSha}} goreleaser release"
+    cmd: "VERSION={{.ShortSha}} goreleaser release"
   install:
     help: Installs the binary into GOBIN
     envs:
