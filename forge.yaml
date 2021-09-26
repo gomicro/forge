@@ -14,6 +14,9 @@ steps:
   deploy:
     help: deploy the artifacts
     cmd: "VERSION={{.ShortSha}} goreleaser release"
+  deploy-snapshot:
+    help: run the deploy for the snapshot
+    cmd: "VERSION={{.ShortSha}} goreleaser release --snapshot"
   install:
     help: Installs the binary into GOBIN
     envs:

@@ -70,5 +70,9 @@ jobs:
     - name: Build Forge
       run: go build
 
+    - name: Deploy Snapshot
+      run: ./forge deploy-snapshot
+
     - name: Deploy
+      if: startsWith(github.ref, 'refs/tags/')
       run: ./forge deploy
