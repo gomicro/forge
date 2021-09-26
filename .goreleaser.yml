@@ -27,5 +27,5 @@ dockers:
     goarch: amd64
 
     image_templates:
-      - "gomicro/forge:latest"
-      - "gomicro/forge:{{ .Env.VERSION }}"
+      - "ghcr.io/gomicro/forge:latest"
+      - "ghcr.io/gomicro/forge:{{ .Env.VERSION }}"
