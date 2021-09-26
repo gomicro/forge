@@ -3,7 +3,7 @@ builds:
 - env:
     - CGO_ENABLED=0
   ldflags:
-    - -X "github.com/gomicro/forge/cmd.Version={{.Env.VERSION}}"
+    - -X "github.com/gomicro/forge/cmd.Version={{ .Version }}"
     - "-s -w"
   goos:
     - darwin
@@ -21,4 +21,4 @@ dockers:
     goarch: amd64
     image_templates:
       - "ghcr.io/gomicro/forge:latest"
-      - "ghcr.io/gomicro/forge:{{ .Env.VERSION }}"
+      - "ghcr.io/gomicro/forge:{{ .Version }}"
