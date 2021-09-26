@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [linting, test]
 
-    envs:
+    env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
