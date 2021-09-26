@@ -11,9 +11,6 @@ steps:
   coverage:
     help: Generates the code coverage from all the tests
     cmd: docker run gomicro/gocover
-  deploy:
-    help: deploy the artifacts
-    cmd: "VERSION={{.ShortSha}} goreleaser release"
   install:
     help: Installs the binary into GOBIN
     envs:
