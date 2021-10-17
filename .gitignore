@@ -1,2 +1,5 @@
 #Binaries
 /forge
+
+#Directories
+/dist
