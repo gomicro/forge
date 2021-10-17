@@ -11,6 +11,11 @@ steps:
   coverage:
     help: Generates the code coverage from all the tests
     cmd: docker run gomicro/gocover
+  dockerize:
+    help: Build the forge docker image
+    cmds:
+      - GOOS=linux forge build
+      - docker build -t ghcr.io/gomicro/{{.Project}} .
   install:
     help: Installs the binary into GOBIN
     envs:
