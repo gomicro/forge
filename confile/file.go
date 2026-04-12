@@ -26,7 +26,7 @@ type File struct {
 	Vars    *vars.Vars        `yaml:"-"`
 }
 
-// ParseFromFile reads an Forge config file from the from the curent directory.
+// ParseFromFile reads an Forge config file from the from the current directory.
 // A File with the populated values is returned and any errors encountered while
 // trying to read the file.
 func ParseFromFile() (*File, error) {
