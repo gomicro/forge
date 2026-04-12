@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/gomicro/forge/confile"
-	clifmt "github.com/gomicro/forge/fmt"
 )
 
 func init() {
@@ -18,28 +17,28 @@ func init() {
 	RootCmd.PersistentFlags().Bool("verbose", false, "show more verbose output")
 	err := viper.BindPFlag("verbose", RootCmd.PersistentFlags().Lookup("verbose"))
 	if err != nil {
-		clifmt.Printf("Error setting up: %v\n", err.Error())
+		fmt.Printf("Error setting up: %s\n", err)
 		os.Exit(1)
 	}
 
 	RootCmd.PersistentFlags().Bool("solo", false, "run a step solo, without its pre or post steps")
 	err = viper.BindPFlag("solo", RootCmd.PersistentFlags().Lookup("solo"))
 	if err != nil {
-		clifmt.Printf("Error setting up: %v\n", err.Error())
+		fmt.Printf("Error setting up: %s\n", err)
 		os.Exit(1)
 	}
 
 	RootCmd.PersistentFlags().Bool("no-pre", false, "skip running pre steps")
 	err = viper.BindPFlag("no-pre", RootCmd.PersistentFlags().Lookup("no-pre"))
 	if err != nil {
-		clifmt.Printf("Error setting up: %v\n", err.Error())
+		fmt.Printf("Error setting up: %s\n", err)
 		os.Exit(1)
 	}
 
 	RootCmd.PersistentFlags().Bool("no-post", false, "skip running post steps")
 	err = viper.BindPFlag("no-post", RootCmd.PersistentFlags().Lookup("no-post"))
 	if err != nil {
-		clifmt.Printf("Error setting up: %v\n", err.Error())
+		fmt.Printf("Error setting up: %s\n", err)
 		os.Exit(1)
 	}
 }
@@ -54,7 +53,6 @@ var RootCmd = &cobra.Command{
 	Long:              `Forge is a CLI tool for executing, in a consistent manner, scripts and commands for building and maintaining projects.`,
 	Args:              cobra.MinimumNArgs(1),
 	RunE:              rootFunc,
-	SilenceErrors:     true,
 	ValidArgsFunction: validArgsFunc,
 }
 
@@ -62,7 +60,6 @@ var RootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		clifmt.Printf("Failed to execute: %v\n", err.Error())
 		os.Exit(1)
 	}
 }

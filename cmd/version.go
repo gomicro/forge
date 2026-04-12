@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
+	"fmt"
 
-	"github.com/gomicro/forge/fmt"
+	"github.com/spf13/cobra"
 )
 
 func init() {
@@ -25,8 +25,8 @@ var versionCmd = &cobra.Command{
 
 func versionFunc(cmd *cobra.Command, args []string) {
 	if Version == "" {
-		fmt.Printf("Forge version dev-local")
+		fmt.Printf("Forge version dev-local\n")
 	} else {
-		fmt.Printf("Forge version %v", Version)
+		fmt.Printf("Forge version %v\n", Version)
 	}
 }
