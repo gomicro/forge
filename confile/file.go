@@ -32,13 +32,13 @@ type File struct {
 func ParseFromFile() (*File, error) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to read config file: %v", err.Error())
+		return nil, fmt.Errorf("parseFromFile: reading config file: %w", err)
 	}
 
 	var conf File
 	err = yaml.Unmarshal(b, &conf)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to unmarshal config file: %v", err.Error())
+		return nil, fmt.Errorf("parseFromFile: unmarshaling config file: %w", err)
 	}
 
 	for name, step := range conf.Steps {
@@ -60,17 +60,17 @@ func ParseFromFile() (*File, error) {
 
 	shaBytes, err := exec.Command("git", "rev-parse", "HEAD").Output()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get sha: %v", err.Error())
+		return nil, fmt.Errorf("parseFromFile: getting sha: %w", err)
 	}
 
 	branchBytes, err := exec.Command("git", "branch", "--show-current").Output()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get branch: %v", err.Error())
+		return nil, fmt.Errorf("parseFromFile: getting branch: %w", err)
 	}
 
 	currentDir, err := os.Getwd()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get current working dir: %v", err.Error())
+		return nil, fmt.Errorf("parseFromFile: getting working directory: %w", err)
 	}
 
 	vars.Set("Branch", string(branchBytes))
@@ -90,12 +90,12 @@ func ParseFromFile() (*File, error) {
 func (f *File) Fmt() error {
 	b, err := yaml.Marshal(f)
 	if err != nil {
-		return fmt.Errorf("fmt: marshal: %v", err.Error())
+		return fmt.Errorf("fmt: marshaling: %w", err)
 	}
 
 	err = ioutil.WriteFile(file, b, 0644)
 	if err != nil {
-		return fmt.Errorf("fmt: write file: %v", err.Error())
+		return fmt.Errorf("fmt: writing file: %w", err)
 	}
 
 	return nil
