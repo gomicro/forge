@@ -1,13 +1,14 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path"
 
 	"github.com/spf13/cobra"
 
 	"github.com/gomicro/forge/confile"
-	"github.com/gomicro/forge/fmt"
 )
 
 func init() {
@@ -18,19 +19,17 @@ var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize a forge config file",
 	Long:  `Collects the basic information to initialize a forge config file.`,
-	Run:   initFunc,
+	RunE:  initFunc,
 }
 
-func initFunc(cmd *cobra.Command, args []string) {
+func initFunc(cmd *cobra.Command, args []string) error {
 	if confile.Exists() {
-		fmt.Printf("config file already exists")
-		os.Exit(1)
+		return errors.New("config file already exists")
 	}
 
 	currentDir, err := os.Getwd()
 	if err != nil {
-		fmt.Printf("Failed to get current working dir: %v", err.Error())
-		os.Exit(1)
+		return fmt.Errorf("getting current working dir: %w", err)
 	}
 
 	projName := path.Base(currentDir)
@@ -49,6 +48,8 @@ func initFunc(cmd *cobra.Command, args []string) {
 
 	err = f.Fmt()
 	if err != nil {
-		fmt.Printf("Error Initializing File: %v", err.Error())
+		return fmt.Errorf("initializing file: %w", err)
 	}
+
+	return nil
 }

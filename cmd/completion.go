@@ -1,12 +1,12 @@
 package cmd
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
-
-	"github.com/gomicro/forge/fmt"
 )
 
 const (
@@ -28,23 +28,29 @@ func init() {
 var CompletionCmd = &cobra.Command{
 	Use:   "completion",
 	Short: "Generate completion files for the forge cli",
-	Run:   completionFunc,
+	RunE:  completionFunc,
 }
 
-func completionFunc(cmd *cobra.Command, args []string) {
+func completionFunc(cmd *cobra.Command, args []string) error {
+	return generateCompletion(shell, os.Stdout)
+}
+
+func generateCompletion(targetShell string, out io.Writer) error {
 	var err error
-	switch strings.ToLower(shell) {
+	switch strings.ToLower(targetShell) {
 	case "bash":
-		err = RootCmd.GenBashCompletion(os.Stdout)
+		err = RootCmd.GenBashCompletion(out)
 	case "ps", "powershell", "power_shell":
-		err = RootCmd.GenPowerShellCompletion(os.Stdout)
+		err = RootCmd.GenPowerShellCompletion(out)
 	case "zsh":
-		err = RootCmd.GenZshCompletion(os.Stdout)
+		err = RootCmd.GenZshCompletion(out)
 	default:
+		return fmt.Errorf("unsupported shell: %q", targetShell)
 	}
 
 	if err != nil {
-		fmt.Printf("error generating completion output: %v", err.Error())
-		os.Exit(1)
+		return fmt.Errorf("generating completion output: %w", err)
 	}
+
+	return nil
 }

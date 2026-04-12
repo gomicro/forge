@@ -1,10 +1,11 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/gomicro/forge/confile"
-	"github.com/gomicro/forge/fmt"
 )
 
 func init() {
@@ -15,17 +16,19 @@ var confmtCmd = &cobra.Command{
 	Use:   "confmt",
 	Short: "Format the forge config file",
 	Long:  `Format and adjust the forge file for consistency.`,
-	Run:   confmtFunc,
+	RunE:  confmtFunc,
 }
 
-func confmtFunc(cmd *cobra.Command, args []string) {
+func confmtFunc(cmd *cobra.Command, args []string) error {
 	conf, err := confile.ParseFromFile()
 	if err != nil {
-		fmt.Printf("Failed: %v", err.Error())
+		return fmt.Errorf("parsing config file: %w", err)
 	}
 
 	err = conf.Fmt()
 	if err != nil {
-		fmt.Printf("Failed: %v", err.Error())
+		return fmt.Errorf("formatting config file: %w", err)
 	}
+
+	return nil
 }
