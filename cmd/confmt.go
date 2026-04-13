@@ -14,8 +14,8 @@ func init() {
 
 var confmtCmd = &cobra.Command{
 	Use:   "confmt",
-	Short: "Format the forge config file",
-	Long:  `Format and adjust the forge file for consistency.`,
+	Short: "Format the forge.yaml config file",
+	Long:  `Rewrite forge.yaml in the current directory in canonical format.`,
 	RunE:  confmtFunc,
 }
 

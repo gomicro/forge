@@ -27,7 +27,8 @@ func init() {
 // forge cli.
 var CompletionCmd = &cobra.Command{
 	Use:   "completion",
-	Short: "Generate completion files for the forge cli",
+	Short: "Generate shell completion scripts",
+	Long:  `Generate completion scripts for bash, zsh, or powershell. Use --shell to specify the target shell (default: zsh).`,
 	RunE:  completionFunc,
 }
 

@@ -48,9 +48,12 @@ func initEnvs() {
 
 // RootCmd represents the base command without any params on it.
 var RootCmd = &cobra.Command{
-	Use:               "forge step [step]...",
-	Short:             "A CLI for building projects",
-	Long:              `Forge is a CLI tool for executing, in a consistent manner, scripts and commands for building and maintaining projects.`,
+	Use:   "forge <step> [step]...",
+	Short: "Run one or more steps defined in forge.yaml",
+	Long: `forge reads forge.yaml in the current directory and executes the named step(s) in order.
+
+Steps are defined under the steps: key in forge.yaml. Each step can run a shell command,
+reference sub-steps, or define pre/post hooks. Pass --verbose to see each command as it runs.`,
 	Args:              cobra.MinimumNArgs(1),
 	RunE:              rootFunc,
 	ValidArgsFunction: validArgsFunc,
