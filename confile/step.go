@@ -35,31 +35,31 @@ func (s *Step) Execute(allSteps map[string]*Step, projectEnvs map[string]string,
 	if len(s.Pre) > 0 && !skipPre {
 		err := s.executeSteps(s.Pre, allSteps)
 		if err != nil {
-			return fmt.Errorf("step: execute pre: %v", err.Error())
+			return fmt.Errorf("step: execute pre: %w", err)
 		}
 	}
 
 	if len(s.Steps) > 0 {
 		err := s.executeSteps(s.Steps, allSteps)
 		if err != nil {
-			return fmt.Errorf("step: execute steps: %v", err.Error())
+			return fmt.Errorf("step: execute steps: %w", err)
 		}
 	} else if len(s.Cmds) > 0 {
 		err := s.executeCmds()
 		if err != nil {
-			return fmt.Errorf("step: execute cmds: %v", err.Error())
+			return fmt.Errorf("step: execute cmds: %w", err)
 		}
 	} else {
 		err := s.executeCmd()
 		if err != nil {
-			return fmt.Errorf("step: execute cmd: %v", err.Error())
+			return fmt.Errorf("step: execute cmd: %w", err)
 		}
 	}
 
 	if len(s.Post) > 0 && !skipPost {
 		err := s.executeSteps(s.Post, allSteps)
 		if err != nil {
-			return fmt.Errorf("step: execute post: %v", err.Error())
+			return fmt.Errorf("step: execute post: %w", err)
 		}
 	}
 
@@ -77,7 +77,7 @@ func (s *Step) executeCmds() error {
 
 		err := executeCmd(cmdString, s.Envs, s.projectEnvs, s.vars)
 		if err != nil {
-			return fmt.Errorf("cmds: cmd exec: %v", err.Error())
+			return fmt.Errorf("cmds: cmd exec: %w", err)
 		}
 	}
 
@@ -101,6 +101,10 @@ func (s *Step) executeSteps(execList []string, allSteps map[string]*Step) error 
 }
 
 func executeCmd(cmdString string, stepEnvs, projectEnvs map[string]string, vars *vars.Vars) error {
+	if viper.GetBool("verbose") {
+		fmt.Printf("$ %s\n", cmdString)
+	}
+
 	cmd := exec.Command("bash", "-c", cmdString)
 
 	cmd.Env = toSlice(stepEnvs)
@@ -116,7 +120,7 @@ func executeCmd(cmdString string, stepEnvs, projectEnvs map[string]string, vars 
 	cmd.Stderr = os.Stderr
 	err := cmd.Start()
 	if err != nil {
-		return fmt.Errorf("execute: %v", err.Error())
+		return fmt.Errorf("execute: %w", err)
 	}
 
 	return cmd.Wait()
