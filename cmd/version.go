@@ -18,8 +18,8 @@ var (
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Display forge's version",
-	Long:  `Display the version of the forge CLI.`,
+	Short: "Display the version",
+	Long:  `Display the current version of the forge CLI.`,
 	Run:   versionFunc,
 }
 

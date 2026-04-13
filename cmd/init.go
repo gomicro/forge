@@ -17,8 +17,8 @@ func init() {
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialize a forge config file",
-	Long:  `Collects the basic information to initialize a forge config file.`,
+	Short: "Create a forge.yaml in the current directory",
+	Long:  `Scaffold a forge.yaml using the current directory name as the project name, with a sample build step included.`,
 	RunE:  initFunc,
 }
 
