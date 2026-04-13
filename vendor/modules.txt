@@ -1,7 +1,5 @@
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/franela/goblin v0.0.0-20210519012713-85d372ac71e2
-## explicit
 # github.com/fsnotify/fsnotify v1.4.9
 github.com/fsnotify/fsnotify
 # github.com/hashicorp/hcl v1.0.0
@@ -21,8 +19,6 @@ github.com/inconshreveable/mousetrap
 github.com/magiconair/properties
 # github.com/mitchellh/mapstructure v1.4.1
 github.com/mitchellh/mapstructure
-# github.com/onsi/gomega v1.13.0
-## explicit
 # github.com/pelletier/go-toml v1.9.3
 github.com/pelletier/go-toml
 # github.com/pmezard/go-difflib v1.0.0
@@ -53,6 +49,7 @@ github.com/subosito/gotenv
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 # golang.org/x/text v0.3.6
+## explicit
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
 # gopkg.in/ini.v1 v1.62.0
