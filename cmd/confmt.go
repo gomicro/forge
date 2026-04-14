@@ -9,11 +9,11 @@ import (
 )
 
 func init() {
-	RootCmd.AddCommand(confmtCmd)
+	configCmd.AddCommand(confmtCmd)
 }
 
 var confmtCmd = &cobra.Command{
-	Use:   "confmt",
+	Use:   "fmt",
 	Short: "Format the forge.yaml config file",
 	Long:  `Rewrite forge.yaml in the current directory in canonical format.`,
 	RunE:  confmtFunc,
