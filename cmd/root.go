@@ -18,7 +18,7 @@ func init() {
 
 	RootCmd.AddCommand(config.ConfigCmd)
 
-	RootCmd.PersistentFlags().Bool("verbose", false, "show more verbose output")
+	RootCmd.PersistentFlags().BoolP("verbose", "v", false, "show more verbose output")
 	err := viper.BindPFlag("verbose", RootCmd.PersistentFlags().Lookup("verbose"))
 	if err != nil {
 		fmt.Printf("Error setting up: %s\n", err)
@@ -71,6 +71,18 @@ func Execute() {
 	}
 }
 
+var forgeTheme = &scribe.Theme{
+	Describe: func(s string) string {
+		return "\033[1;36m" + s + "\033[0m"
+	},
+	Print: func(s string) string {
+		return "\033[2m" + s + "\033[0m"
+	},
+	Error: func(err error) string {
+		return "\033[1;31m" + err.Error() + "\033[0m"
+	},
+}
+
 func rootFunc(cmd *cobra.Command, args []string) error {
 	verbose := viper.GetBool("verbose")
 
@@ -79,7 +91,7 @@ func rootFunc(cmd *cobra.Command, args []string) error {
 		writer = os.Stdout
 	}
 
-	scrb, err := scribe.NewScribe(writer, scribe.DefaultTheme)
+	scrb, err := scribe.NewScribe(writer, forgeTheme)
 	if err != nil {
 		return fmt.Errorf("setting up output: %w", err)
 	}
@@ -97,11 +109,13 @@ func rootFunc(cmd *cobra.Command, args []string) error {
 	}
 
 	for _, s := range args {
-		err := conf.Steps[s].Execute(conf.Steps, conf.Envs, conf.Vars, scrb)
+		err := conf.Steps[s].Execute(s, conf.Steps, conf.Envs, conf.Vars, scrb)
 		if err != nil {
 			return fmt.Errorf("executing step %v: %w", s, err)
 		}
 	}
+
+	fmt.Fprintln(writer)
 
 	return nil
 }

@@ -26,7 +26,7 @@ type Step struct {
 
 // Execute runs the command that is specified for the step. It returns the output
 // of the command and any errors it encounters.
-func (s *Step) Execute(allSteps map[string]*Step, projectEnvs map[string]string, vars *vars.Vars, scrb scribe.Scriber) error {
+func (s *Step) Execute(name string, allSteps map[string]*Step, projectEnvs map[string]string, vars *vars.Vars, scrb scribe.Scriber) error {
 	skipPre := viper.GetBool("solo") || viper.GetBool("no-pre")
 	skipPost := viper.GetBool("solo") || viper.GetBool("no-post")
 
@@ -34,31 +34,41 @@ func (s *Step) Execute(allSteps map[string]*Step, projectEnvs map[string]string,
 	s.vars = vars
 
 	if len(s.Pre) > 0 && !skipPre {
+		scrb.BeginDescribe(name + ": pre")
 		err := s.executeSteps(s.Pre, allSteps, scrb)
+		scrb.EndDescribe()
 		if err != nil {
 			return fmt.Errorf("step: execute pre: %w", err)
 		}
 	}
 
 	if len(s.Steps) > 0 {
+		scrb.BeginDescribe(name)
 		err := s.executeSteps(s.Steps, allSteps, scrb)
+		scrb.EndDescribe()
 		if err != nil {
 			return fmt.Errorf("step: execute steps: %w", err)
 		}
 	} else if len(s.Cmds) > 0 {
+		scrb.BeginDescribe(name)
 		err := s.executeCmds(scrb)
+		scrb.EndDescribe()
 		if err != nil {
 			return fmt.Errorf("step: execute cmds: %w", err)
 		}
 	} else {
+		scrb.BeginDescribe(name)
 		err := s.executeCmd(scrb)
+		scrb.EndDescribe()
 		if err != nil {
 			return fmt.Errorf("step: execute cmd: %w", err)
 		}
 	}
 
 	if len(s.Post) > 0 && !skipPost {
+		scrb.BeginDescribe(name + ": post")
 		err := s.executeSteps(s.Post, allSteps, scrb)
+		scrb.EndDescribe()
 		if err != nil {
 			return fmt.Errorf("step: execute post: %w", err)
 		}
@@ -86,13 +96,13 @@ func (s *Step) executeCmds(scrb scribe.Scriber) error {
 }
 
 func (s *Step) executeSteps(execList []string, allSteps map[string]*Step, scrb scribe.Scriber) error {
-	for _, step := range execList {
-		s, ok := allSteps[step]
+	for _, stepName := range execList {
+		step, ok := allSteps[stepName]
 		if !ok {
-			return fmt.Errorf("step does not exist: %v", step)
+			return fmt.Errorf("step does not exist: %v", stepName)
 		}
 
-		err := s.Execute(allSteps, s.projectEnvs, s.vars, scrb)
+		err := step.Execute(stepName, allSteps, step.projectEnvs, step.vars, scrb)
 		if err != nil {
 			return err
 		}
