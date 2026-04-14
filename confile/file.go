@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"runtime"
@@ -30,7 +29,7 @@ type File struct {
 // A File with the populated values is returned and any errors encountered while
 // trying to read the file.
 func ParseFromFile() (*File, error) {
-	b, err := ioutil.ReadFile(file)
+	b, err := os.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("parseFromFile: reading config file: %w", err)
 	}
@@ -93,7 +92,7 @@ func (f *File) Fmt() error {
 		return fmt.Errorf("fmt: marshaling: %w", err)
 	}
 
-	err = ioutil.WriteFile(file, b, 0644)
+	err = os.WriteFile(file, b, 0644)
 	if err != nil {
 		return fmt.Errorf("fmt: writing file: %w", err)
 	}
