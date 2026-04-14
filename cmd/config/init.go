@@ -1,4 +1,4 @@
-package cmd
+package config
 
 import (
 	"errors"
@@ -6,13 +6,12 @@ import (
 	"os"
 	"path"
 
-	"github.com/spf13/cobra"
-
 	"github.com/gomicro/forge/confile"
+	"github.com/spf13/cobra"
 )
 
 func init() {
-	configCmd.AddCommand(initCmd)
+	ConfigCmd.AddCommand(initCmd)
 }
 
 var initCmd = &cobra.Command{

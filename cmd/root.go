@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 
+	"github.com/gomicro/forge/cmd/config"
 	"github.com/gomicro/forge/confile"
 	"github.com/gomicro/scribe"
 	"github.com/spf13/cobra"
@@ -14,6 +15,8 @@ import (
 
 func init() {
 	cobra.OnInitialize(initEnvs)
+
+	RootCmd.AddCommand(config.ConfigCmd)
 
 	RootCmd.PersistentFlags().Bool("verbose", false, "show more verbose output")
 	err := viper.BindPFlag("verbose", RootCmd.PersistentFlags().Lookup("verbose"))
