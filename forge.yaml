@@ -8,6 +8,9 @@ steps:
       GOOS: '{{.Os}}'
       VERSION: '{{.ShortSha}}'
     cmd: go build -ldflags "-X 'github.com/gomicro/forge/cmd.Version=$VERSION'" -o {{.Project}} .
+  clean:
+     help: Cleans up the project by removing the binary and other generated content
+     cmd: go clean
   coverage:
     help: Generates the code coverage from all the tests
     cmd: docker run gomicro/gocover
