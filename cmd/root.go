@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"sort"
 
+	"github.com/gomicro/forge/confile"
+	"github.com/gomicro/scribe"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	"github.com/gomicro/forge/confile"
 )
 
 func init() {
@@ -68,6 +69,18 @@ func Execute() {
 }
 
 func rootFunc(cmd *cobra.Command, args []string) error {
+	verbose := viper.GetBool("verbose")
+
+	writer := io.Writer(io.Discard)
+	if verbose {
+		writer = os.Stdout
+	}
+
+	scrb, err := scribe.NewScribe(writer, scribe.DefaultTheme)
+	if err != nil {
+		return fmt.Errorf("setting up output: %w", err)
+	}
+
 	conf, err := confile.ParseFromFile()
 	if err != nil {
 		return err
@@ -81,7 +94,7 @@ func rootFunc(cmd *cobra.Command, args []string) error {
 	}
 
 	for _, s := range args {
-		err := conf.Steps[s].Execute(conf.Steps, conf.Envs, conf.Vars)
+		err := conf.Steps[s].Execute(conf.Steps, conf.Envs, conf.Vars, scrb)
 		if err != nil {
 			return fmt.Errorf("executing step %v: %w", s, err)
 		}

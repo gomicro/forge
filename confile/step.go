@@ -6,6 +6,7 @@ import (
 	"os/exec"
 
 	"github.com/gomicro/forge/vars"
+	"github.com/gomicro/scribe"
 	"github.com/spf13/viper"
 )
 
@@ -25,7 +26,7 @@ type Step struct {
 
 // Execute runs the command that is specified for the step. It returns the output
 // of the command and any errors it encounters.
-func (s *Step) Execute(allSteps map[string]*Step, projectEnvs map[string]string, vars *vars.Vars) error {
+func (s *Step) Execute(allSteps map[string]*Step, projectEnvs map[string]string, vars *vars.Vars, scrb scribe.Scriber) error {
 	skipPre := viper.GetBool("solo") || viper.GetBool("no-pre")
 	skipPost := viper.GetBool("solo") || viper.GetBool("no-post")
 
@@ -33,31 +34,31 @@ func (s *Step) Execute(allSteps map[string]*Step, projectEnvs map[string]string,
 	s.vars = vars
 
 	if len(s.Pre) > 0 && !skipPre {
-		err := s.executeSteps(s.Pre, allSteps)
+		err := s.executeSteps(s.Pre, allSteps, scrb)
 		if err != nil {
 			return fmt.Errorf("step: execute pre: %w", err)
 		}
 	}
 
 	if len(s.Steps) > 0 {
-		err := s.executeSteps(s.Steps, allSteps)
+		err := s.executeSteps(s.Steps, allSteps, scrb)
 		if err != nil {
 			return fmt.Errorf("step: execute steps: %w", err)
 		}
 	} else if len(s.Cmds) > 0 {
-		err := s.executeCmds()
+		err := s.executeCmds(scrb)
 		if err != nil {
 			return fmt.Errorf("step: execute cmds: %w", err)
 		}
 	} else {
-		err := s.executeCmd()
+		err := s.executeCmd(scrb)
 		if err != nil {
 			return fmt.Errorf("step: execute cmd: %w", err)
 		}
 	}
 
 	if len(s.Post) > 0 && !skipPost {
-		err := s.executeSteps(s.Post, allSteps)
+		err := s.executeSteps(s.Post, allSteps, scrb)
 		if err != nil {
 			return fmt.Errorf("step: execute post: %w", err)
 		}
@@ -66,16 +67,16 @@ func (s *Step) Execute(allSteps map[string]*Step, projectEnvs map[string]string,
 	return nil
 }
 
-func (s *Step) executeCmd() error {
+func (s *Step) executeCmd(scrb scribe.Scriber) error {
 	cmdString := s.vars.Process(s.Cmd)
-	return executeCmd(cmdString, s.Envs, s.projectEnvs, s.vars)
+	return executeCmd(cmdString, s.Envs, s.projectEnvs, s.vars, scrb)
 }
 
-func (s *Step) executeCmds() error {
+func (s *Step) executeCmds(scrb scribe.Scriber) error {
 	for _, c := range s.Cmds {
 		cmdString := s.vars.Process(c)
 
-		err := executeCmd(cmdString, s.Envs, s.projectEnvs, s.vars)
+		err := executeCmd(cmdString, s.Envs, s.projectEnvs, s.vars, scrb)
 		if err != nil {
 			return fmt.Errorf("cmds: cmd exec: %w", err)
 		}
@@ -84,14 +85,14 @@ func (s *Step) executeCmds() error {
 	return nil
 }
 
-func (s *Step) executeSteps(execList []string, allSteps map[string]*Step) error {
+func (s *Step) executeSteps(execList []string, allSteps map[string]*Step, scrb scribe.Scriber) error {
 	for _, step := range execList {
 		s, ok := allSteps[step]
 		if !ok {
 			return fmt.Errorf("step does not exist: %v", step)
 		}
 
-		err := s.Execute(allSteps, s.projectEnvs, s.vars)
+		err := s.Execute(allSteps, s.projectEnvs, s.vars, scrb)
 		if err != nil {
 			return err
 		}
@@ -100,10 +101,8 @@ func (s *Step) executeSteps(execList []string, allSteps map[string]*Step) error 
 	return nil
 }
 
-func executeCmd(cmdString string, stepEnvs, projectEnvs map[string]string, vars *vars.Vars) error {
-	if viper.GetBool("verbose") {
-		fmt.Printf("$ %s\n", cmdString)
-	}
+func executeCmd(cmdString string, stepEnvs, projectEnvs map[string]string, vars *vars.Vars, scrb scribe.Scriber) error {
+	scrb.Print(fmt.Sprintf("$ %s", cmdString))
 
 	cmd := exec.Command("bash", "-c", cmdString)
 
