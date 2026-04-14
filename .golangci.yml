@@ -29,9 +29,6 @@ linters:
       - path: cmd
         linters:
           - forbidigo
-      - path: confile
-        linters:
-          - forbidigo
       - path: fmt
         linters:
           - forbidigo
