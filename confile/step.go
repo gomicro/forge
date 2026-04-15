@@ -1,6 +1,7 @@
 package confile
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -125,14 +126,36 @@ func executeCmd(cmdString string, stepEnvs, projectEnvs map[string]string, vars 
 
 	cmd.Env = append(cmd.Env, os.Environ()...)
 
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
 	err := cmd.Start()
 	if err != nil {
 		return fmt.Errorf("execute: %w", err)
 	}
 
-	return cmd.Wait()
+	waitErr := cmd.Wait()
+
+	if stdout.Len() > 0 {
+		scrb.PrintLines(&stdout)
+	}
+
+	if stderr.Len() > 0 {
+		if viper.GetBool("verbose") {
+			scrb.BeginDescribe("\033[1;31mstderr\033[0m")
+			scrb.PrintLines(&stderr)
+			scrb.EndDescribe()
+		} else {
+			fmt.Fprintf(os.Stderr, "\033[1;31mstderr\033[0m\n%s", stderr.String())
+		}
+	}
+
+	if waitErr != nil {
+		return fmt.Errorf("execute: %w", waitErr)
+	}
+
+	return nil
 }
 
 func toSlice(e map[string]string) []string {

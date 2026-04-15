@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"sort"
 
 	"github.com/gomicro/forge/cmd/config"
@@ -61,12 +63,19 @@ reference sub-steps, or define pre/post hooks. Pass --verbose to see each comman
 	Args:              cobra.MinimumNArgs(1),
 	RunE:              rootFunc,
 	ValidArgsFunction: validArgsFunc,
+	SilenceUsage:      true,
+	SilenceErrors:     true,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			os.Exit(exitErr.ExitCode())
+		}
+
 		os.Exit(1)
 	}
 }
