@@ -70,14 +70,23 @@ reference sub-steps, or define pre/post hooks. Pass --verbose to see each comman
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if err := RootCmd.Execute(); err != nil {
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
-			os.Exit(exitErr.ExitCode())
-		}
-
-		os.Exit(1)
+	err := RootCmd.Execute()
+	if err != nil {
+		os.Exit(reportError(err, os.Stderr))
 	}
+}
+
+// reportError writes err to w and returns the exit code the process should
+// use, propagating a failed command's own exit code when one is available.
+func reportError(err error, w io.Writer) int {
+	fmt.Fprintf(w, "Error: %v\n", err)
+
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		return exitErr.ExitCode()
+	}
+
+	return 1
 }
 
 var forgeTheme = &scribe.Theme{
