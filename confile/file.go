@@ -34,28 +34,10 @@ func ParseFromFile() (*File, error) {
 		return nil, fmt.Errorf("parseFromFile: reading config file: %w", err)
 	}
 
-	var conf File
-	err = yaml.Unmarshal(b, &conf)
+	conf, err := parse(b)
 	if err != nil {
-		return nil, fmt.Errorf("parseFromFile: unmarshaling config file: %w", err)
+		return nil, fmt.Errorf("parseFromFile: %w", err)
 	}
-
-	for name, step := range conf.Steps {
-		if len(step.Steps) > 0 {
-			infloop := false
-			for _, s := range step.Steps {
-				if strings.EqualFold(s, name) {
-					infloop = true
-				}
-			}
-
-			if infloop {
-				return nil, fmt.Errorf("infinite loop detected: step '%v'", name)
-			}
-		}
-	}
-
-	vars := &vars.Vars{}
 
 	shaBytes, err := exec.Command("git", "rev-parse", "HEAD").Output()
 	if err != nil {
@@ -72,16 +54,53 @@ func ParseFromFile() (*File, error) {
 		return nil, fmt.Errorf("parseFromFile: getting working directory: %w", err)
 	}
 
-	vars.Set("Branch", string(branchBytes))
-	vars.Set("Dir", currentDir)
-	vars.Set("Os", runtime.GOOS)
-	vars.Set("Project", conf.Project.Name)
-	vars.Set("Sha", string(shaBytes))
-	vars.Set("ShortSha", string(shaBytes)[:7])
+	conf.Vars = builtinVars(conf.Project.Name, string(shaBytes), string(branchBytes), currentDir)
 
-	conf.Vars = vars
+	return conf, nil
+}
+
+func parse(b []byte) (*File, error) {
+	var conf File
+	err := yaml.Unmarshal(b, &conf)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshaling config file: %w", err)
+	}
+
+	if conf.Project == nil {
+		return nil, errors.New("missing required project block")
+	}
+
+	for name, step := range conf.Steps {
+		for _, s := range step.Steps {
+			if strings.EqualFold(s, name) {
+				return nil, fmt.Errorf("infinite loop detected: step '%v'", name)
+			}
+		}
+	}
 
 	return &conf, nil
+}
+
+// builtinVars returns the template variables every step can reference. Raw git
+// output is accepted as-is and trimmed here.
+func builtinVars(project, sha, branch, dir string) *vars.Vars {
+	sha = strings.TrimSpace(sha)
+	branch = strings.TrimSpace(branch)
+
+	shortSha := sha
+	if len(shortSha) > 7 {
+		shortSha = shortSha[:7]
+	}
+
+	v := &vars.Vars{}
+	v.Set("Branch", branch)
+	v.Set("Dir", dir)
+	v.Set("Os", runtime.GOOS)
+	v.Set("Project", project)
+	v.Set("Sha", sha)
+	v.Set("ShortSha", shortSha)
+
+	return v
 }
 
 // Fmt marshals the config file struct into yaml and overwrites the original
