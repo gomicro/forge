@@ -65,7 +65,7 @@ golangci-lint run
 </KeyConventions>
 
 <KnownLandmines>
-- Parsing fails outside a Git repo with at least one commit, and panics if `project.name` is missing.
+- Parsing fails outside a Git repo with at least one commit, and errors if the `project` block is missing.
 - `config fmt` re-marshals the whole file and drops YAML comments and custom ordering.
 - The README is minimal; treat `forge.yaml`, `cmd/`, and `confile/` as the behavior reference.
 </KnownLandmines>
