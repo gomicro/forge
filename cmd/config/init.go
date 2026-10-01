@@ -22,7 +22,7 @@ var initCmd = &cobra.Command{
 }
 
 func initFunc(cmd *cobra.Command, args []string) error {
-	if confile.Exists() {
+	if confile.Exists(confile.DefaultPath) {
 		return errors.New("config file already exists")
 	}
 
@@ -45,7 +45,7 @@ func initFunc(cmd *cobra.Command, args []string) error {
 		},
 	}
 
-	err = f.Fmt()
+	err = f.Fmt(confile.DefaultPath)
 	if err != nil {
 		return fmt.Errorf("initializing file: %w", err)
 	}

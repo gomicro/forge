@@ -13,9 +13,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const (
-	file = "./forge.yaml"
-)
+// DefaultPath is the config file forge reads, relative to the working directory.
+const DefaultPath = "forge.yaml"
 
 // File represents the build options for a project
 type File struct {
@@ -25,45 +24,63 @@ type File struct {
 	Vars    *vars.Vars        `yaml:"-"`
 }
 
-// ParseFromFile reads an Forge config file from the from the current directory.
-// A File with the populated values is returned and any errors encountered while
-// trying to read the file.
-func ParseFromFile() (*File, error) {
-	b, err := os.ReadFile(file)
+// Parse reads and validates the config file at path. It does not consult git,
+// so Vars is nil until ResolveVars is called.
+func Parse(path string) (*File, error) {
+	b, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("parseFromFile: reading config file: %w", err)
+		return nil, fmt.Errorf("reading config file: %w", err)
 	}
 
 	conf, err := parse(b)
 	if err != nil {
-		return nil, fmt.Errorf("parseFromFile: %w", err)
+		return nil, fmt.Errorf("parsing config file: %w", err)
 	}
-
-	shaBytes, err := exec.Command("git", "rev-parse", "HEAD").Output()
-	if err != nil {
-		return nil, fmt.Errorf("parseFromFile: getting sha: %w", err)
-	}
-
-	branchBytes, err := exec.Command("git", "branch", "--show-current").Output()
-	if err != nil {
-		return nil, fmt.Errorf("parseFromFile: getting branch: %w", err)
-	}
-
-	currentDir, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("parseFromFile: getting working directory: %w", err)
-	}
-
-	conf.Vars = builtinVars(conf.Project.Name, string(shaBytes), string(branchBytes), currentDir)
 
 	return conf, nil
+}
+
+// ResolveVars populates Vars with the built-in template variables, reading git
+// metadata from the repository containing dir.
+func (f *File) ResolveVars(dir string) error {
+	sha, err := gitOutput(dir, "rev-parse", "HEAD")
+	if err != nil {
+		return fmt.Errorf("resolveVars: getting sha: %w", err)
+	}
+
+	branch, err := gitOutput(dir, "branch", "--show-current")
+	if err != nil {
+		return fmt.Errorf("resolveVars: getting branch: %w", err)
+	}
+
+	f.Vars = builtinVars(f.Project.Name, sha, branch, dir)
+
+	return nil
+}
+
+func gitOutput(dir string, args ...string) (string, error) {
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+
+	out, err := cmd.Output()
+	if err != nil {
+		// %v rather than %w: git's exit status must not be mistaken for a step's.
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			return "", fmt.Errorf("running git %v: %v: %s", strings.Join(args, " "), err, strings.TrimSpace(string(exitErr.Stderr)))
+		}
+
+		return "", fmt.Errorf("running git %v: %v", strings.Join(args, " "), err)
+	}
+
+	return string(out), nil
 }
 
 func parse(b []byte) (*File, error) {
 	var conf File
 	err := yaml.Unmarshal(b, &conf)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshaling config file: %w", err)
+		return nil, fmt.Errorf("unmarshaling: %w", err)
 	}
 
 	if conf.Project == nil {
@@ -103,15 +120,15 @@ func builtinVars(project, sha, branch, dir string) *vars.Vars {
 	return v
 }
 
-// Fmt marshals the config file struct into yaml and overwrites the original
-// config file in the current directory. It returns any errors it encounters.
-func (f *File) Fmt() error {
+// Fmt marshals the config into yaml and writes it to path, replacing any
+// existing file.
+func (f *File) Fmt(path string) error {
 	b, err := yaml.Marshal(f)
 	if err != nil {
 		return fmt.Errorf("fmt: marshaling: %w", err)
 	}
 
-	err = os.WriteFile(file, b, 0644)
+	err = os.WriteFile(path, b, 0644)
 	if err != nil {
 		return fmt.Errorf("fmt: writing file: %w", err)
 	}
@@ -119,9 +136,8 @@ func (f *File) Fmt() error {
 	return nil
 }
 
-// Exists checks whether or not the preferred config file exists or not. It
-// returns true if the file exists, and false if the file doesn't exist.
-func Exists() bool {
-	_, err := os.Stat(file)
+// Exists reports whether a config file is present at path.
+func Exists(path string) bool {
+	_, err := os.Stat(path)
 	return !errors.Is(err, fs.ErrNotExist)
 }
