@@ -47,8 +47,10 @@ golangci-lint run
 - `forge` reads only `./forge.yaml`; there is no config discovery beyond the working directory.
 - `confile.Parse(path)` only reads and validates YAML. `(*File).ResolveVars(dir)` shells out to `git`
   for the built-in vars (`Branch`, `Sha`, `ShortSha`, `Dir`, `Os`, `Project`); only step execution calls it.
-- A step runs `pre` steps, then nested `steps`, `cmds`, or `cmd` (first match wins), then `post`
+- A step runs `pre` steps, then exactly one of nested `steps`, `cmds`, or `cmd`, then `post`
   steps; `--solo`, `--no-pre`, and `--no-post` skip hooks.
+- `Parse` validates the whole step graph up front (empty or ambiguous steps, undefined references,
+  cycles through `pre`/`steps`/`post`) and reports every problem; any invalid step blocks all runs.
 - Command strings and env values are templated through `vars.Vars.Process()`; unknown vars are left as-is.
 - Child process env is step envs, then project envs, then the inherited process environment.
 - Root completion parses `forge.yaml` to suggest step names with their `help` text.

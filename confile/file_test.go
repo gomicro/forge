@@ -167,7 +167,7 @@ func TestParse(t *testing.T) {
 		{
 			name:    "step references itself",
 			input:   "project:\n  name: demo\nsteps:\n  build:\n    steps: [build]\n",
-			wantErr: "infinite loop detected: step 'build'",
+			wantErr: "invalid config:\n  - cycle detected: build -> build",
 		},
 	}
 
