@@ -87,12 +87,9 @@ func parse(b []byte) (*File, error) {
 		return nil, errors.New("missing required project block")
 	}
 
-	for name, step := range conf.Steps {
-		for _, s := range step.Steps {
-			if strings.EqualFold(s, name) {
-				return nil, fmt.Errorf("infinite loop detected: step '%v'", name)
-			}
-		}
+	problems := validate(&conf)
+	if len(problems) > 0 {
+		return nil, fmt.Errorf("invalid config:\n  - %s", strings.Join(problems, "\n  - "))
 	}
 
 	return &conf, nil
