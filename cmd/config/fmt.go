@@ -19,12 +19,12 @@ var fmtCmd = &cobra.Command{
 }
 
 func fmtFunc(cmd *cobra.Command, args []string) error {
-	conf, err := confile.ParseFromFile()
+	conf, err := confile.Parse(confile.DefaultPath)
 	if err != nil {
-		return fmt.Errorf("parsing config file: %w", err)
+		return fmt.Errorf("loading config: %w", err)
 	}
 
-	err = conf.Fmt()
+	err = conf.Fmt(confile.DefaultPath)
 	if err != nil {
 		return fmt.Errorf("formatting config file: %w", err)
 	}

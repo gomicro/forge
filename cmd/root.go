@@ -114,9 +114,9 @@ func rootFunc(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("setting up output: %w", err)
 	}
 
-	conf, err := confile.ParseFromFile()
+	conf, err := confile.Parse(confile.DefaultPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("loading config: %w", err)
 	}
 
 	for _, a := range args {
@@ -124,6 +124,16 @@ func rootFunc(cmd *cobra.Command, args []string) error {
 		if !found {
 			return fmt.Errorf("target not found: %v", a)
 		}
+	}
+
+	dir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("getting working directory: %w", err)
+	}
+
+	err = conf.ResolveVars(dir)
+	if err != nil {
+		return fmt.Errorf("resolving template variables: %w", err)
 	}
 
 	for _, s := range args {
@@ -143,7 +153,7 @@ func validArgsFunc(cmd *cobra.Command, args []string, toComplete string) ([]stri
 }
 
 func argStrings() []string {
-	conf, err := confile.ParseFromFile()
+	conf, err := confile.Parse(confile.DefaultPath)
 	if err != nil {
 		return nil
 	}

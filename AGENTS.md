@@ -45,8 +45,8 @@ golangci-lint run
 
 <ArchitectureNotes>
 - `forge` reads only `./forge.yaml`; there is no config discovery beyond the working directory.
-- `confile.ParseFromFile()` also shells out to `git` and populates built-in vars: `Branch`, `Sha`,
-  `ShortSha`, `Dir`, `Os`, and `Project`.
+- `confile.Parse(path)` only reads and validates YAML. `(*File).ResolveVars(dir)` shells out to `git`
+  for the built-in vars (`Branch`, `Sha`, `ShortSha`, `Dir`, `Os`, `Project`); only step execution calls it.
 - A step runs `pre` steps, then nested `steps`, `cmds`, or `cmd` (first match wins), then `post`
   steps; `--solo`, `--no-pre`, and `--no-post` skip hooks.
 - Command strings and env values are templated through `vars.Vars.Process()`; unknown vars are left as-is.
@@ -65,7 +65,8 @@ golangci-lint run
 </KeyConventions>
 
 <KnownLandmines>
-- Parsing fails outside a Git repo with at least one commit, and errors if the `project` block is missing.
+- Running steps requires a Git repo with at least one commit; `config` commands and completion do not.
+- Parsing errors if the `project` block is missing.
 - `config fmt` re-marshals the whole file and drops YAML comments and custom ordering.
 - The README is minimal; treat `forge.yaml`, `cmd/`, and `confile/` as the behavior reference.
 </KnownLandmines>
