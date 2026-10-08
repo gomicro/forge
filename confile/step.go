@@ -116,14 +116,15 @@ func executeCmd(ctx context.Context, command string, stepEnvs map[string]string,
 
 	cmd := exec.CommandContext(ctx, "bash", "-c", cmdString)
 
-	cmd.Env = toSlice(stepEnvs)
-	cmd.Env = append(cmd.Env, toSlice(options.ProjectEnvs)...)
+	configEnvs := toSlice(options.ProjectEnvs)
+	configEnvs = append(configEnvs, toSlice(stepEnvs)...)
 
-	for i := range cmd.Env {
-		cmd.Env[i] = options.Vars.Process(cmd.Env[i])
+	for i := range configEnvs {
+		configEnvs[i] = options.Vars.Process(configEnvs[i])
 	}
 
-	cmd.Env = append(cmd.Env, os.Environ()...)
+	// exec keeps the last value for duplicate keys.
+	cmd.Env = append(os.Environ(), configEnvs...)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
