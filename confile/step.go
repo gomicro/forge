@@ -2,13 +2,14 @@ package confile
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 
 	"github.com/gomicro/forge/vars"
+
 	"github.com/gomicro/scribe"
-	"github.com/spf13/viper"
 )
 
 // Step represents details of single step to be executed by the cli.
@@ -20,23 +21,26 @@ type Step struct {
 	Post  []string          `yaml:"post,omitempty"`
 	Pre   []string          `yaml:"pre,omitempty"`
 	Steps []string          `yaml:"steps,omitempty"`
-
-	projectEnvs map[string]string
-	vars        *vars.Vars
 }
 
-// Execute runs the command that is specified for the step. It returns the output
-// of the command and any errors it encounters.
-func (s *Step) Execute(name string, allSteps map[string]*Step, projectEnvs map[string]string, vars *vars.Vars, scrb scribe.Scriber) error {
-	skipPre := viper.GetBool("solo") || viper.GetBool("no-pre")
-	skipPost := viper.GetBool("solo") || viper.GetBool("no-post")
+// RunOptions carries shared execution settings through the entire step graph.
+type RunOptions struct {
+	Steps       map[string]*Step
+	ProjectEnvs map[string]string
+	Vars        *vars.Vars
+	Scriber     scribe.Scriber
+	SkipPre     bool
+	SkipPost    bool
+	Verbose     bool
+}
 
-	s.projectEnvs = projectEnvs
-	s.vars = vars
+// Execute runs the step and its dependencies using the supplied settings.
+func (s *Step) Execute(ctx context.Context, name string, options RunOptions) error {
+	scrb := options.Scriber
 
-	if len(s.Pre) > 0 && !skipPre {
+	if len(s.Pre) > 0 && !options.SkipPre {
 		scrb.BeginDescribe(name + ": pre")
-		err := s.executeSteps(s.Pre, allSteps, scrb)
+		err := s.executeSteps(ctx, s.Pre, options)
 		scrb.EndDescribe()
 		if err != nil {
 			return fmt.Errorf("step: execute pre: %w", err)
@@ -45,30 +49,30 @@ func (s *Step) Execute(name string, allSteps map[string]*Step, projectEnvs map[s
 
 	if len(s.Steps) > 0 {
 		scrb.BeginDescribe(name)
-		err := s.executeSteps(s.Steps, allSteps, scrb)
+		err := s.executeSteps(ctx, s.Steps, options)
 		scrb.EndDescribe()
 		if err != nil {
 			return fmt.Errorf("step: execute steps: %w", err)
 		}
 	} else if len(s.Cmds) > 0 {
 		scrb.BeginDescribe(name)
-		err := s.executeCmds(scrb)
+		err := s.executeCmds(ctx, options)
 		scrb.EndDescribe()
 		if err != nil {
 			return fmt.Errorf("step: execute cmds: %w", err)
 		}
 	} else {
 		scrb.BeginDescribe(name)
-		err := s.executeCmd(scrb)
+		err := executeCmd(ctx, s.Cmd, s.Envs, options)
 		scrb.EndDescribe()
 		if err != nil {
 			return fmt.Errorf("step: execute cmd: %w", err)
 		}
 	}
 
-	if len(s.Post) > 0 && !skipPost {
+	if len(s.Post) > 0 && !options.SkipPost {
 		scrb.BeginDescribe(name + ": post")
-		err := s.executeSteps(s.Post, allSteps, scrb)
+		err := s.executeSteps(ctx, s.Post, options)
 		scrb.EndDescribe()
 		if err != nil {
 			return fmt.Errorf("step: execute post: %w", err)
@@ -78,16 +82,9 @@ func (s *Step) Execute(name string, allSteps map[string]*Step, projectEnvs map[s
 	return nil
 }
 
-func (s *Step) executeCmd(scrb scribe.Scriber) error {
-	cmdString := s.vars.Process(s.Cmd)
-	return executeCmd(cmdString, s.Envs, s.projectEnvs, s.vars, scrb)
-}
-
-func (s *Step) executeCmds(scrb scribe.Scriber) error {
+func (s *Step) executeCmds(ctx context.Context, options RunOptions) error {
 	for _, c := range s.Cmds {
-		cmdString := s.vars.Process(c)
-
-		err := executeCmd(cmdString, s.Envs, s.projectEnvs, s.vars, scrb)
+		err := executeCmd(ctx, c, s.Envs, options)
 		if err != nil {
 			return fmt.Errorf("cmds: cmd exec: %w", err)
 		}
@@ -96,32 +93,34 @@ func (s *Step) executeCmds(scrb scribe.Scriber) error {
 	return nil
 }
 
-func (s *Step) executeSteps(execList []string, allSteps map[string]*Step, scrb scribe.Scriber) error {
+func (s *Step) executeSteps(ctx context.Context, execList []string, options RunOptions) error {
 	for _, stepName := range execList {
-		step, ok := allSteps[stepName]
+		step, ok := options.Steps[stepName]
 		if !ok {
 			return fmt.Errorf("step does not exist: %v", stepName)
 		}
 
-		err := step.Execute(stepName, allSteps, step.projectEnvs, step.vars, scrb)
+		err := step.Execute(ctx, stepName, options)
 		if err != nil {
-			return err
+			return fmt.Errorf("executeSteps: executing step %s: %w", stepName, err)
 		}
 	}
 
 	return nil
 }
 
-func executeCmd(cmdString string, stepEnvs, projectEnvs map[string]string, vars *vars.Vars, scrb scribe.Scriber) error {
+func executeCmd(ctx context.Context, command string, stepEnvs map[string]string, options RunOptions) error {
+	cmdString := options.Vars.Process(command)
+	scrb := options.Scriber
 	scrb.Print(fmt.Sprintf("$ %s", cmdString))
 
-	cmd := exec.Command("bash", "-c", cmdString)
+	cmd := exec.CommandContext(ctx, "bash", "-c", cmdString)
 
 	cmd.Env = toSlice(stepEnvs)
-	cmd.Env = append(cmd.Env, toSlice(projectEnvs)...)
+	cmd.Env = append(cmd.Env, toSlice(options.ProjectEnvs)...)
 
 	for i := range cmd.Env {
-		cmd.Env[i] = vars.Process(cmd.Env[i])
+		cmd.Env[i] = options.Vars.Process(cmd.Env[i])
 	}
 
 	cmd.Env = append(cmd.Env, os.Environ()...)
@@ -142,7 +141,7 @@ func executeCmd(cmdString string, stepEnvs, projectEnvs map[string]string, vars 
 	}
 
 	if stderr.Len() > 0 {
-		if viper.GetBool("verbose") {
+		if options.Verbose {
 			scrb.BeginDescribe("\033[1;31mstderr\033[0m")
 			scrb.PrintLines(&stderr)
 			scrb.EndDescribe()
