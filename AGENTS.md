@@ -52,6 +52,8 @@ golangci-lint run
 - `Parse` validates the whole step graph up front (empty or ambiguous steps, undefined references,
   cycles through `pre`/`steps`/`post`) and reports every problem; any invalid step blocks all runs.
 - Command strings and env values are templated through `vars.Vars.Process()`; unknown vars are left as-is.
+- `cmd/` builds `confile.RunOptions`; every child receives the same vars, project envs, and flags.
+  Steps hold only configuration; execution uses the caller's context and does not read Viper globals.
 - Child process env is step envs, then project envs, then the inherited process environment.
 - Root completion parses `forge.yaml` to suggest step names with their `help` text.
 - `cmd.Version` is injected at build time via `-ldflags`; empty means `dev-local`.

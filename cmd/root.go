@@ -136,8 +136,18 @@ func rootFunc(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("resolving template variables: %w", err)
 	}
 
+	options := confile.RunOptions{
+		Steps:       conf.Steps,
+		ProjectEnvs: conf.Envs,
+		Vars:        conf.Vars,
+		Scriber:     scrb,
+		SkipPre:     viper.GetBool("solo") || viper.GetBool("no-pre"),
+		SkipPost:    viper.GetBool("solo") || viper.GetBool("no-post"),
+		Verbose:     verbose,
+	}
+
 	for _, s := range args {
-		err := conf.Steps[s].Execute(s, conf.Steps, conf.Envs, conf.Vars, scrb)
+		err := conf.Steps[s].Execute(cmd.Context(), s, options)
 		if err != nil {
 			return fmt.Errorf("executing step %v: %w", s, err)
 		}
