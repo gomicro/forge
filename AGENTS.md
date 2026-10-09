@@ -54,7 +54,8 @@ golangci-lint run
 - Command strings and env values are templated through `vars.Vars.Process()`; unknown vars are left as-is.
 - `cmd/` builds `confile.RunOptions`; every child receives the same vars, project envs, and flags.
   Steps hold only configuration; execution uses the caller's context and does not read Viper globals.
-- Child process env is step envs, then project envs, then the inherited process environment.
+- Child process env precedence is step > project > inherited process environment, including empty values.
+  Only config env values are templated; inherited values pass through unchanged.
 - Root completion parses `forge.yaml` to suggest step names with their `help` text.
 - `cmd.Version` is injected at build time via `-ldflags`; empty means `dev-local`.
 </ArchitectureNotes>

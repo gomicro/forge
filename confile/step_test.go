@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"os"
 	"os/exec"
 	"regexp"
 	"testing"
@@ -117,6 +118,7 @@ func TestStepExecuteFailure(t *testing.T) {
 		"fail":  {Cmd: "printf 'failure-output\\n' >&2; exit 3"},
 		"later": {Cmd: "printf 'should-not-run\\n'"},
 	}
+
 	v := vars.Vars{}
 	var output bytes.Buffer
 	options := RunOptions{
@@ -133,4 +135,57 @@ func TestStepExecuteFailure(t *testing.T) {
 	assert.ErrorContains(t, err, "executing step fail")
 	assert.Contains(t, output.String(), "failure-output")
 	assert.NotContains(t, output.String(), "should-not-run")
+}
+
+func TestStepExecuteEnvPrecedence(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		projectEnvs map[string]string
+		stepEnvs    map[string]string
+		wantHome    string
+	}{
+		{name: "inherits shell", wantHome: os.Getenv("HOME")},
+		{
+			name:        "project overrides shell",
+			projectEnvs: map[string]string{"HOME": "project-{{.Project}}"},
+			wantHome:    "project-demo",
+		},
+		{
+			name:     "step overrides shell without project envs",
+			stepEnvs: map[string]string{"HOME": "step-{{.Project}}"},
+			wantHome: "step-demo",
+		},
+		{
+			name:        "step overrides project and shell",
+			projectEnvs: map[string]string{"HOME": "project"},
+			stepEnvs:    map[string]string{"HOME": "step-{{.Project}}"},
+			wantHome:    "step-demo",
+		},
+		{
+			name:        "empty step value overrides project and shell",
+			projectEnvs: map[string]string{"HOME": "project"},
+			stepEnvs:    map[string]string{"HOME": ""},
+			wantHome:    "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			step := &Step{Cmd: `printf 'HOME=[%s]\n' "$HOME"`, Envs: tt.stepEnvs}
+			v := vars.Vars{"Project": "demo"}
+			var output bytes.Buffer
+			options := RunOptions{
+				ProjectEnvs: tt.projectEnvs, Vars: &v, Scriber: testScriber(t, &output),
+			}
+
+			err := step.Execute(context.Background(), "env", options)
+
+			assert.NoError(t, err)
+			assert.Contains(t, output.String(), "HOME=["+tt.wantHome+"]")
+		})
+	}
 }
