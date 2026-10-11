@@ -51,7 +51,7 @@ func TestStepExecuteChildContext(t *testing.T) {
 	var err error
 	assert.NotPanics(t, func() {
 		err = steps["root"].Execute(context.Background(), "root", RunOptions{
-			Steps: steps, ProjectEnvs: envs, Vars: &v, Scriber: scrb,
+			Steps: steps, ProjectEnvs: envs, Vars: &v, Scriber: scrb, Verbose: true,
 		})
 	})
 	assert.NoError(t, err)
@@ -65,15 +65,19 @@ func TestStepExecuteOptions(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		skipPre  bool
-		skipPost bool
-		want     []string
+		name      string
+		skipPre   bool
+		skipPost  bool
+		recursive bool
+		want      []string
 	}{
 		{name: "all hooks", want: []string{"PRE", "NESTED_PRE", "BODY", "NESTED_POST", "POST"}},
-		{name: "skip pre at every level", skipPre: true, want: []string{"BODY", "NESTED_POST", "POST"}},
-		{name: "skip post at every level", skipPost: true, want: []string{"PRE", "NESTED_PRE", "BODY"}},
-		{name: "skip both at every level", skipPre: true, skipPost: true, want: []string{"BODY"}},
+		{name: "skip pre at top level", skipPre: true, want: []string{"NESTED_PRE", "BODY", "NESTED_POST", "POST"}},
+		{name: "skip post at top level", skipPost: true, want: []string{"PRE", "NESTED_PRE", "BODY", "NESTED_POST"}},
+		{name: "skip both at top level", skipPre: true, skipPost: true, want: []string{"NESTED_PRE", "BODY", "NESTED_POST"}},
+		{name: "skip pre recursively", skipPre: true, recursive: true, want: []string{"BODY", "NESTED_POST", "POST"}},
+		{name: "skip post recursively", skipPost: true, recursive: true, want: []string{"PRE", "NESTED_PRE", "BODY"}},
+		{name: "skip both recursively", skipPre: true, skipPost: true, recursive: true, want: []string{"BODY"}},
 	}
 
 	for _, tt := range tests {
@@ -92,7 +96,8 @@ func TestStepExecuteOptions(t *testing.T) {
 			var output bytes.Buffer
 			options := RunOptions{
 				Steps: steps, Vars: &v, Scriber: testScriber(t, &output),
-				SkipPre: tt.skipPre, SkipPost: tt.skipPost,
+				SkipPre: tt.skipPre, SkipPost: tt.skipPost, Recursive: tt.recursive,
+				Verbose: true,
 			}
 
 			err := steps["root"].Execute(context.Background(), "root", options)
@@ -179,7 +184,7 @@ func TestStepExecuteEnvPrecedence(t *testing.T) {
 			v := vars.Vars{"Project": "demo"}
 			var output bytes.Buffer
 			options := RunOptions{
-				ProjectEnvs: tt.projectEnvs, Vars: &v, Scriber: testScriber(t, &output),
+				ProjectEnvs: tt.projectEnvs, Vars: &v, Scriber: testScriber(t, &output), Verbose: true,
 			}
 
 			err := step.Execute(context.Background(), "env", options)

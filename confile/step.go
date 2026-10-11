@@ -3,9 +3,12 @@ package confile
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"sync"
 
 	"github.com/gomicro/forge/vars"
 
@@ -29,8 +32,11 @@ type RunOptions struct {
 	ProjectEnvs map[string]string
 	Vars        *vars.Vars
 	Scriber     scribe.Scriber
+	Stdin       io.Reader
+	Stderr      io.Writer
 	SkipPre     bool
 	SkipPost    bool
+	Recursive   bool
 	Verbose     bool
 }
 
@@ -94,13 +100,19 @@ func (s *Step) executeCmds(ctx context.Context, options RunOptions) error {
 }
 
 func (s *Step) executeSteps(ctx context.Context, execList []string, options RunOptions) error {
+	childOptions := options
+	if !options.Recursive {
+		childOptions.SkipPre = false
+		childOptions.SkipPost = false
+	}
+
 	for _, stepName := range execList {
 		step, ok := options.Steps[stepName]
 		if !ok {
 			return fmt.Errorf("step does not exist: %v", stepName)
 		}
 
-		err := step.Execute(ctx, stepName, options)
+		err := step.Execute(ctx, stepName, childOptions)
 		if err != nil {
 			return fmt.Errorf("executeSteps: executing step %s: %w", stepName, err)
 		}
@@ -115,6 +127,10 @@ func executeCmd(ctx context.Context, command string, stepEnvs map[string]string,
 	scrb.Print(fmt.Sprintf("$ %s", cmdString))
 
 	cmd := exec.CommandContext(ctx, "bash", "-c", cmdString)
+	cmd.Stdin = options.Stdin
+	if cmd.Stdin == nil {
+		cmd.Stdin = os.Stdin
+	}
 
 	configEnvs := toSlice(options.ProjectEnvs)
 	configEnvs = append(configEnvs, toSlice(stepEnvs)...)
@@ -126,34 +142,112 @@ func executeCmd(ctx context.Context, command string, stepEnvs map[string]string,
 	// exec keeps the last value for duplicate keys.
 	cmd.Env = append(os.Environ(), configEnvs...)
 
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	var outputMu sync.Mutex
+	stdout := &lineWriter{
+		writeLine: func(line []byte) error {
+			outputMu.Lock()
+			defer outputMu.Unlock()
+			scrb.PrintLines(bytes.NewBuffer(line))
+			return nil
+		},
+	}
+	if !options.Verbose {
+		stdout = nil
+	}
 
-	err := cmd.Start()
+	stderrWriter := options.Stderr
+	if stderrWriter == nil {
+		stderrWriter = os.Stderr
+	}
+	stderrHeaderWritten := false
+	stderr := &lineWriter{
+		writeLine: func(line []byte) error {
+			outputMu.Lock()
+			defer outputMu.Unlock()
+
+			if options.Verbose {
+				scrb.BeginDescribe("\033[1;31mstderr\033[0m")
+				scrb.PrintLines(bytes.NewBuffer(line))
+				scrb.EndDescribe()
+				return nil
+			}
+
+			if !stderrHeaderWritten {
+				_, err := fmt.Fprintln(stderrWriter, "\033[1;31mstderr\033[0m")
+				if err != nil {
+					return fmt.Errorf("writing stderr header: %w", err)
+				}
+				stderrHeaderWritten = true
+			}
+
+			_, err := stderrWriter.Write(line)
+			if err != nil {
+				return fmt.Errorf("writing command stderr: %w", err)
+			}
+
+			return nil
+		},
+	}
+	if options.Verbose {
+		cmd.Stdout = stdout
+	} else {
+		cmd.Stdout = io.Discard
+	}
+	cmd.Stderr = stderr
+
+	err := cmd.Run()
+	if stdout != nil {
+		err = errors.Join(err, stdout.Flush())
+	}
+	err = errors.Join(err, stderr.Flush())
 	if err != nil {
 		return fmt.Errorf("execute: %w", err)
 	}
 
-	waitErr := cmd.Wait()
+	return nil
+}
 
-	if stdout.Len() > 0 {
-		scrb.PrintLines(&stdout)
-	}
+type lineWriter struct {
+	mu        sync.Mutex
+	buffer    []byte
+	writeLine func([]byte) error
+}
 
-	if stderr.Len() > 0 {
-		if options.Verbose {
-			scrb.BeginDescribe("\033[1;31mstderr\033[0m")
-			scrb.PrintLines(&stderr)
-			scrb.EndDescribe()
-		} else {
-			fmt.Fprintf(os.Stderr, "\033[1;31mstderr\033[0m\n%s", stderr.String())
+func (w *lineWriter) Write(p []byte) (int, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	written := len(p)
+	w.buffer = append(w.buffer, p...)
+	for {
+		i := bytes.IndexByte(w.buffer, '\n')
+		if i < 0 {
+			return written, nil
 		}
+
+		err := w.writeLine(w.buffer[:i+1])
+		if err != nil {
+			return 0, err
+		}
+
+		w.buffer = w.buffer[i+1:]
+	}
+}
+
+func (w *lineWriter) Flush() error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	if len(w.buffer) == 0 {
+		return nil
 	}
 
-	if waitErr != nil {
-		return fmt.Errorf("execute: %w", waitErr)
+	err := w.writeLine(w.buffer)
+	if err != nil {
+		return err
 	}
+
+	w.buffer = nil
 
 	return nil
 }

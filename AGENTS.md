@@ -48,7 +48,8 @@ golangci-lint run
 - `confile.Parse(path)` only reads and validates YAML. `(*File).ResolveVars(dir)` shells out to `git`
   for the built-in vars (`Branch`, `Sha`, `ShortSha`, `Dir`, `Os`, `Project`); only step execution calls it.
 - A step runs `pre` steps, then exactly one of nested `steps`, `cmds`, or `cmd`, then `post`
-  steps; `--solo`, `--no-pre`, and `--no-post` skip hooks.
+  steps; `--solo`, `--no-pre`, and `--no-post` skip hooks on named steps. Add `--recursive` to
+  propagate those skips to nested steps; nested hooks otherwise run by default.
 - `Parse` validates the whole step graph up front (empty or ambiguous steps, undefined references,
   cycles through `pre`/`steps`/`post`) and reports every problem; any invalid step blocks all runs.
 - Command strings and env values are templated through `vars.Vars.Process()`; unknown vars are left as-is.
@@ -56,6 +57,8 @@ golangci-lint run
   Steps hold only configuration; execution uses the caller's context and does not read Viper globals.
 - Child process env precedence is step > project > inherited process environment, including empty values.
   Only config env values are templated; inherited values pass through unchanged.
+- In verbose mode, command stdout and stderr stream line by line through `scribe`; in quiet mode,
+  stdout is discarded and stderr streams to stderr. Commands inherit stdin.
 - Root completion parses `forge.yaml` to suggest step names with their `help` text.
 - `cmd.Version` is injected at build time via `-ldflags`; empty means `dev-local`.
 </ArchitectureNotes>
