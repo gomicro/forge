@@ -47,6 +47,13 @@ func init() {
 		fmt.Printf("Error setting up: %s\n", err)
 		os.Exit(1)
 	}
+
+	RootCmd.PersistentFlags().Bool("recursive", false, "apply --solo, --no-pre, and --no-post to nested steps")
+	err = viper.BindPFlag("recursive", RootCmd.PersistentFlags().Lookup("recursive"))
+	if err != nil {
+		fmt.Printf("Error setting up: %s\n", err)
+		os.Exit(1)
+	}
 }
 
 func initEnvs() {
@@ -59,7 +66,8 @@ var RootCmd = &cobra.Command{
 	Long: `forge reads forge.yaml in the current directory and executes the named step(s) in order.
 
 Steps are defined under the steps: key in forge.yaml. Each step can run a shell command,
-reference sub-steps, or define pre/post hooks. Pass --verbose to see each command as it runs.`,
+reference sub-steps, or define pre/post hooks. Pass --verbose to see each command as it runs.
+Hook-skipping flags apply to named steps; pass --recursive to also apply them to nested steps.`,
 	Args:              cobra.MinimumNArgs(1),
 	RunE:              rootFunc,
 	ValidArgsFunction: validArgsFunc,
@@ -141,8 +149,10 @@ func rootFunc(cmd *cobra.Command, args []string) error {
 		ProjectEnvs: conf.Envs,
 		Vars:        conf.Vars,
 		Scriber:     scrb,
+		Stdin:       os.Stdin,
 		SkipPre:     viper.GetBool("solo") || viper.GetBool("no-pre"),
 		SkipPost:    viper.GetBool("solo") || viper.GetBool("no-post"),
+		Recursive:   viper.GetBool("recursive"),
 		Verbose:     verbose,
 	}
 
