@@ -125,6 +125,11 @@ func (f *File) Fmt(path string) error {
 		return fmt.Errorf("fmt: marshaling: %w", err)
 	}
 
+	b, err = formatConfig(b)
+	if err != nil {
+		return fmt.Errorf("fmt: formatting: %w", err)
+	}
+
 	err = os.WriteFile(path, b, 0644)
 	if err != nil {
 		return fmt.Errorf("fmt: writing file: %w", err)

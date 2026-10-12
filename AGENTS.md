@@ -75,6 +75,7 @@ golangci-lint run
 <KnownLandmines>
 - Running steps requires a Git repo with at least one commit; `config` commands and completion do not.
 - Parsing errors if the `project` block is missing.
-- `config fmt` re-marshals the whole file and drops YAML comments and custom ordering.
+- `config fmt` preserves YAML comments, sorts steps and fields into canonical order, and adds
+  readable spacing between top-level blocks and steps.
 - The README is minimal; treat `forge.yaml`, `cmd/`, and `confile/` as the behavior reference.
 </KnownLandmines>
