@@ -188,3 +188,104 @@ func TestParse(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatConfig(t *testing.T) {
+	t.Parallel()
+
+	input := []byte(`# project comment
+project:
+    name: demo
+steps:
+    zed:
+        cmd: echo zed
+        # zed comment
+        help: zed help
+    alpha:
+        # alpha help comment
+        help: alpha help
+        cmds:
+            - echo alpha
+`)
+
+	want := `# project comment
+project:
+  name: demo
+
+steps:
+  alpha:
+    # alpha help comment
+    help: alpha help
+    cmds:
+      - echo alpha
+
+  zed:
+    # zed comment
+    help: zed help
+    cmd: echo zed
+`
+
+	actual, err := formatConfig(input)
+
+	assert.NoError(t, err)
+	assert.Equal(t, want, string(actual))
+
+	formattedAgain, err := formatConfig(actual)
+
+	assert.NoError(t, err)
+	assert.Equal(t, want, string(formattedAgain))
+}
+
+func TestFormatConfigPreservesHeadAndFootComments(t *testing.T) {
+	t.Parallel()
+
+	input := []byte(`# before project
+project:
+  name: demo # inline project
+# between blocks
+envs:
+  GLOBAL: value
+# before steps
+steps:
+  build:
+    cmd: go build
+# trailing file comment
+`)
+
+	want := `# before project
+project:
+  name: demo # inline project
+
+# between blocks
+envs:
+  GLOBAL: value
+
+# before steps
+steps:
+  build:
+    cmd: go build
+# trailing file comment
+`
+
+	actual, err := formatConfig(input)
+
+	assert.NoError(t, err)
+	assert.Equal(t, want, string(actual))
+}
+
+func TestFormatRejectsInvalidConfigWithoutChangingFile(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), DefaultPath)
+	original := []byte("steps:\n  build:\n    cmd: go build\n")
+	err := os.WriteFile(path, original, 0644)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	err = Format(path)
+
+	assert.ErrorContains(t, err, "missing required project block")
+	formatted, readErr := os.ReadFile(path)
+	assert.NoError(t, readErr)
+	assert.Equal(t, original, formatted)
+}

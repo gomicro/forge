@@ -14,17 +14,12 @@ func init() {
 var fmtCmd = &cobra.Command{
 	Use:   "fmt",
 	Short: "Format the forge.yaml config file",
-	Long:  `Rewrite forge.yaml in the current directory in canonical format.`,
+	Long:  `Rewrite forge.yaml in the current directory in canonical format, preserving comments.`,
 	RunE:  fmtFunc,
 }
 
 func fmtFunc(cmd *cobra.Command, args []string) error {
-	conf, err := confile.Parse(confile.DefaultPath)
-	if err != nil {
-		return fmt.Errorf("loading config: %w", err)
-	}
-
-	err = conf.Fmt(confile.DefaultPath)
+	err := confile.Format(confile.DefaultPath)
 	if err != nil {
 		return fmt.Errorf("formatting config file: %w", err)
 	}

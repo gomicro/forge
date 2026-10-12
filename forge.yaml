@@ -1,5 +1,6 @@
 project:
   name: forge
+
 steps:
   build:
     help: Compiles the project into a binary for the current system's OS
@@ -8,17 +9,21 @@ steps:
       GOOS: '{{.Os}}'
       VERSION: '{{.ShortSha}}'
     cmd: go build -ldflags "-X 'github.com/gomicro/forge/cmd.Version=$VERSION'" -o {{.Project}} .
+
   clean:
-     help: Cleans up the project by removing the binary and other generated content
-     cmd: go clean
+    help: Cleans up the project by removing the binary and other generated content
+    cmd: go clean
+
   coverage:
     help: Generates the code coverage from all the tests
     cmd: docker run gomicro/gocover
+
   dockerize:
     help: Build the forge docker image
     cmds:
       - GOOS=linux forge build
       - docker build -t ghcr.io/gomicro/{{.Project}} .
+
   install:
     help: Installs the binary into GOBIN
     envs:
@@ -26,9 +31,11 @@ steps:
       GOOS: '{{.Os}}'
       VERSION: '{{.ShortSha}}'
     cmd: go install -ldflags "-X 'github.com/gomicro/forge/cmd.Version=$VERSION'"
+
   linters:
     help: Run all the linters
     cmd: golangci-lint run
+
   test:
     help: Run the unit tests for the project
     cmd: go test ./...
