@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/gomicro/forge/confile"
 	"github.com/spf13/cobra"
@@ -22,17 +22,25 @@ var initCmd = &cobra.Command{
 }
 
 func initFunc(cmd *cobra.Command, args []string) error {
-	if confile.Exists(confile.DefaultPath) {
-		return errors.New("config file already exists")
-	}
-
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("getting current working dir: %w", err)
 	}
 
-	projName := path.Base(currentDir)
+	err = initializeConfig(confile.DefaultPath, currentDir)
+	if err != nil {
+		return fmt.Errorf("initializing config file: %w", err)
+	}
 
+	return nil
+}
+
+func initializeConfig(configPath, currentDir string) error {
+	if confile.Exists(configPath) {
+		return errors.New("config file already exists")
+	}
+
+	projName := filepath.Base(currentDir)
 	f := &confile.File{
 		Project: &confile.Project{
 			Name: projName,
@@ -45,9 +53,9 @@ func initFunc(cmd *cobra.Command, args []string) error {
 		},
 	}
 
-	err = f.Fmt(confile.DefaultPath)
+	err := f.Fmt(configPath)
 	if err != nil {
-		return fmt.Errorf("initializing file: %w", err)
+		return fmt.Errorf("formatting initialized file: %w", err)
 	}
 
 	return nil
