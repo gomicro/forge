@@ -8,5 +8,11 @@ The project will be versioned in accordance with [Semver 2.0.0](https://semver.o
 
 It is always highly recommended to vendor the version you are using.
 
+## Docker Image
+
+The published `ghcr.io/gomicro/forge` image is built `FROM scratch` and contains only the
+statically linked `forge` binary. Use it as a binary carrier in a multi-stage Docker build with
+`COPY --from`; it does not include the `bash` or `git` executables required to run project steps.
+
 ## License
 See [LICENSE.md](./LICENSE.md) for more information.
